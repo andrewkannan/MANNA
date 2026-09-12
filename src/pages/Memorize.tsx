@@ -1,173 +1,124 @@
 import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { ChevronLeft } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { calculateNextReview } from '../utils/srs';
-import type { ReviewResult } from '../types';
-
-type Mode = 'STUDY' | 'RECALL' | 'RESULT';
+import NothingCard from '../components/ArtCard';
+import { BrainCircuit, Check, X, RotateCw } from 'lucide-react';
 
 export default function Memorize() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const singleVerseId = location.state?.singleVerseId;
-  
-  const [sessionQueue, setSessionQueue] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [mode, setMode] = useState<Mode>('STUDY');
+  const [isFlipped, setIsFlipped] = useState(false);
 
-  const currentVerseId = sessionQueue[currentIndex];
-  const verse = useLiveQuery(() => currentVerseId ? db.bibleVerses.get(currentVerseId) : undefined, [currentVerseId]);
-  const userData = useLiveQuery(() => currentVerseId ? db.userData.get(currentVerseId) : undefined, [currentVerseId]);
+  const activeVerses = useLiveQuery(() => 
+    db.userData.filter(v => v.dueDate <= Date.now() || v.status === 'NEW').toArray()
+  );
+
+  const activeVerseDetails = useLiveQuery(
+    () => {
+      if (!activeVerses) return [];
+      const ids = activeVerses.map(v => v.verseId);
+      return db.bibleVerses.where('id').anyOf(ids).toArray();
+    },
+    [activeVerses]
+  );
 
   useEffect(() => {
-    const buildQueue = async () => {
-      if (singleVerseId) {
-        setSessionQueue([singleVerseId]);
-        return;
-      }
-      const now = Date.now();
-      const allDue = await db.userData.filter(v => v.status !== 'NEW' && v.dueDate <= now).limit(10).toArray();
-      const newVerses = await db.userData.filter(v => v.status === 'NEW').limit(2).toArray();
-      
-      const queueIds = [...allDue, ...newVerses].map(v => v.verseId);
-      setSessionQueue(queueIds);
-    };
-    buildQueue();
-  }, [singleVerseId]);
+    setIsFlipped(false);
+  }, [currentIndex]);
 
-  const handleResult = async (result: ReviewResult) => {
-    if (userData) {
-      const updates = calculateNextReview(userData, result);
-      await db.userData.update(userData.verseId, updates);
-      
-      const appState = await db.appState.get('singleton' as any);
-      if (appState) {
-        const today = new Date().setHours(0,0,0,0);
-        let newStreak = appState.currentStreak;
-        if (appState.lastActiveDate !== today) {
-           newStreak += 1;
-        }
-        await db.appState.update('singleton' as any, {
-          lastActiveDate: today,
-          currentStreak: newStreak,
-          longestStreak: Math.max(appState.longestStreak, newStreak)
-        });
-      }
-
-      if (currentIndex < sessionQueue.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-        setMode('STUDY');
-      } else {
-        setSessionQueue([]);
-      }
-    }
-  };
-
-  if (sessionQueue.length === 0 && !singleVerseId) {
+  if (!activeVerses || !activeVerseDetails) return <div className="p-8 text-white font-mono text-xs tracking-widest uppercase bg-black min-h-screen">Initializing...</div>;
+  
+  if (activeVerses.length === 0) {
     return (
-      <div className="min-h-full flex flex-col items-center justify-center p-6 text-center bg-[#FDFBF7]">
-        <h1 className="text-4xl font-serif mb-4 text-[#2C2825]">Session Complete</h1>
-        <p className="font-serif italic opacity-70 mb-12 text-[#4A4541]">Your mind is renewed.</p>
-        <button onClick={() => navigate('/')} className="px-8 py-3 bg-[#2C2825] text-[#FDFBF7] font-serif rounded shadow-md hover:bg-[#1A1815] transition-colors">
-          Return Home
-        </button>
+      <div className="min-h-full flex flex-col items-center justify-center p-6 bg-black text-white text-center">
+        <BrainCircuit size={48} className="text-white/20 mb-6" strokeWidth={1} />
+        <h2 className="text-2xl font-sans font-black tracking-tighter mb-2">MEMORY CORE OPTIMIZED</h2>
+        <p className="text-white/50 font-mono text-xs tracking-[0.2em] uppercase max-w-[250px]">No pending verses. Synchronization complete.</p>
       </div>
     );
   }
 
-  if (sessionQueue.length === 0 && singleVerseId) {
-     return <div className="p-6 font-serif text-xl text-center h-full flex items-center justify-center bg-[#FDFBF7]">Done</div>;
-  }
+  const currentData = activeVerses[currentIndex];
+  const currentDetails = activeVerseDetails.find(v => v.id === currentData.verseId);
 
-  if (!verse || !userData) return <div className="p-6 font-serif text-xl text-center h-full flex items-center justify-center bg-[#FDFBF7]">Loading...</div>;
+  const handleScore = async (score: 1 | 2 | 3 | 4) => {
+    let result: 'EASY' | 'GOOD' | 'PRACTICE' | 'DIFFICULT' = 'GOOD';
+    if (score === 1) result = 'DIFFICULT';
+    if (score === 2) result = 'PRACTICE';
+    if (score === 3) result = 'GOOD';
+    if (score === 4) result = 'EASY';
+
+    const updates = calculateNextReview(currentData, result);
+    await db.userData.update(currentData.verseId, updates);
+    
+    // update streak
+    const appState = await db.appState.get('singleton' as any);
+    if (appState) {
+      const today = new Date().setHours(0,0,0,0);
+      let newStreak = appState.currentStreak;
+      if (appState.lastActiveDate !== today) {
+         newStreak += 1;
+      }
+      await db.appState.update('singleton' as any, {
+        lastActiveDate: today,
+        currentStreak: newStreak,
+        longestStreak: Math.max(appState.longestStreak, newStreak)
+      });
+    }
+    
+    if (currentIndex < activeVerses.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+    }
+  };
+
+  if (!currentDetails) return null;
 
   return (
-    <div className="min-h-full flex flex-col bg-[#F9F6F0] relative overflow-y-auto">
-      <header className="sticky top-0 bg-[#F9F6F0]/90 backdrop-blur-md px-4 py-3 flex items-center justify-between z-10 border-b border-[#EAE5D9]">
-        <button onClick={() => navigate('/')} className="flex items-center text-[#2C2825] hover:opacity-70 transition-opacity">
-          <ChevronLeft size={28} strokeWidth={1.5} className="-ml-2" />
-        </button>
-        <span className="font-serif text-[#4A4541]">
-          {currentIndex + 1} of {sessionQueue.length}
-        </span>
+    <div className="min-h-full bg-black text-white flex flex-col pb-24">
+      <header className="px-6 pt-12 pb-4 flex justify-between items-center border-b border-white/10 sticky top-0 bg-black/90 backdrop-blur-md z-30">
+        <div>
+          <h1 className="text-3xl font-sans font-black tracking-tighter">RECALL</h1>
+          <p className="font-mono text-red-500 text-[10px] tracking-[0.2em] uppercase font-bold mt-1 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+            Protocol Active
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="font-sans font-black text-2xl">{currentIndex + 1}<span className="text-white/30 text-lg">/{activeVerses.length}</span></p>
+          <p className="font-mono text-white/50 text-[10px] tracking-[0.2em] uppercase">Queue</p>
+        </div>
       </header>
 
-      <div className="flex-1 p-4 sm:p-6 flex flex-col justify-center items-center">
-        {/* The Art Card */}
-        <div className="w-full max-w-[420px] bg-[#FDFBF7] shadow-xl rounded-lg overflow-hidden flex flex-col items-center p-6 sm:p-8 border border-[#EAE5D9]">
-          {userData.imageUrl && (
-            <div className="w-full aspect-[4/5] bg-white p-2 shadow-sm mb-8">
-              <div 
-                className="w-full h-full bg-cover bg-center"
-                style={{ backgroundImage: `url(${userData.imageUrl})` }}
-              />
-            </div>
-          )}
+      <main className="flex-1 px-6 py-8 flex flex-col justify-center max-w-[400px] mx-auto w-full">
+        <NothingCard 
+          verseDetails={currentDetails}
+          userData={currentData}
+          isFlipped={isFlipped}
+          onClick={() => setIsFlipped(!isFlipped)}
+        />
 
-          <h2 className="font-serif text-2xl text-[#2C2825] mb-6 text-center">
-            {verse.reference}
-          </h2>
-          
-          <div className="min-h-[120px] flex items-center justify-center w-full">
-            {mode === 'STUDY' && (
-              <p className="font-serif text-[#4A4541] text-center text-[15px] leading-relaxed max-w-[95%]">
-                {verse.text}
-              </p>
-            )}
-            
-            {mode === 'RECALL' && (
-              <p className="font-serif italic text-[#4A4541]/40 text-center text-sm">
-                Recall the verse using the image...
-              </p>
-            )}
-            
-            {mode === 'RESULT' && (
-              <p className="font-serif text-[#4A4541] text-center text-[15px] leading-relaxed max-w-[95%]">
-                {verse.text}
-              </p>
-            )}
+        <div className={`mt-8 transition-all duration-300 ${isFlipped ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+          <p className="text-center font-mono text-white/50 text-[10px] tracking-[0.2em] uppercase mb-4 font-bold">Assess Accuracy</p>
+          <div className="grid grid-cols-4 gap-2">
+            <button onClick={() => handleScore(1)} className="flex flex-col items-center justify-center py-4 bg-[#111] border border-white/20 hover:border-red-500 hover:bg-red-500/10 transition-colors">
+              <X size={18} className="text-red-500 mb-2" />
+              <span className="font-mono text-[10px] uppercase tracking-widest text-white/70">Fail</span>
+            </button>
+            <button onClick={() => handleScore(2)} className="flex flex-col items-center justify-center py-4 bg-[#111] border border-white/20 hover:border-orange-500 hover:bg-orange-500/10 transition-colors">
+              <RotateCw size={18} className="text-orange-500 mb-2" />
+              <span className="font-mono text-[10px] uppercase tracking-widest text-white/70">Hard</span>
+            </button>
+            <button onClick={() => handleScore(3)} className="flex flex-col items-center justify-center py-4 bg-[#111] border border-white/20 hover:border-blue-500 hover:bg-blue-500/10 transition-colors">
+              <Check size={18} className="text-blue-500 mb-2" />
+              <span className="font-mono text-[10px] uppercase tracking-widest text-white/70">Good</span>
+            </button>
+            <button onClick={() => handleScore(4)} className="flex flex-col items-center justify-center py-4 bg-[#111] border border-white/20 hover:border-green-500 hover:bg-green-500/10 transition-colors">
+              <Check size={18} className="text-green-500 mb-2" strokeWidth={3} />
+              <span className="font-mono text-[10px] uppercase tracking-widest text-white/70">Easy</span>
+            </button>
           </div>
         </div>
-      </div>
-
-      <div className="px-4 sm:px-6 pb-8 w-full max-w-[420px] mx-auto z-10 pt-4">
-        {mode === 'STUDY' && (
-          <button 
-            onClick={() => setMode('RECALL')} 
-            className="w-full bg-[#2C2825] text-[#FDFBF7] font-serif text-lg py-4 rounded shadow-md active:scale-[0.98] transition-transform"
-          >
-            Memorize
-          </button>
-        )}
-
-        {mode === 'RECALL' && (
-          <button 
-            onClick={() => setMode('RESULT')} 
-            className="w-full bg-white text-[#2C2825] border border-[#2C2825] font-serif text-lg py-4 rounded shadow-sm hover:bg-[#F9F6F0] transition-colors"
-          >
-            Show Answer
-          </button>
-        )}
-        
-        {mode === 'RESULT' && (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <button onClick={() => handleResult('DIFFICULT')} className="border border-[#8B4513] text-[#8B4513] font-serif py-3 rounded active:bg-[#8B4513] active:text-white transition-colors">
-              Difficult
-            </button>
-            <button onClick={() => handleResult('PRACTICE')} className="border border-[#2C2825] text-[#2C2825] font-serif py-3 rounded active:bg-[#2C2825] active:text-white transition-colors">
-              Practice
-            </button>
-            <button onClick={() => handleResult('GOOD')} className="bg-[#2C2825] text-[#FDFBF7] font-serif py-3 rounded active:scale-[0.95] transition-transform">
-              Good
-            </button>
-            <button onClick={() => handleResult('EASY')} className="bg-[#556B2F] text-[#FDFBF7] font-serif py-3 rounded active:scale-[0.95] transition-transform">
-              Easy
-            </button>
-          </div>
-        )}
-      </div>
+      </main>
     </div>
   );
 }

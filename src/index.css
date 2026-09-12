@@ -6,6 +6,26 @@
   body {
     @apply bg-black text-white font-sans antialiased;
   }
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  /* Apply globally to common scroll containers */
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+  * {
+    scrollbar-width: none;
+  }
 }
 
 .nothing-grain {

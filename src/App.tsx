@@ -10,6 +10,7 @@ import Memorize from './pages/Memorize';
 import TDisplayPreview from './pages/TDisplayPreview';
 import TDisplayNothingOS from './pages/TDisplayNothingOS';
 import DisplayControl from './pages/DisplayControl';
+import Directory from './pages/Directory';
 import { initializeDatabase } from './db/seedDatabase';
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
         <Route path="/t-display-nothing" element={<TDisplayNothingOS />} />
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Home />} />
+          <Route path="directory" element={<Directory />} />
           <Route path="library" element={<Library />} />
           <Route path="verse/:id" element={<VerseDetail />} />
           <Route path="progress" element={<Progress />} />

@@ -1,24 +1,25 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/db';
 import { ChevronLeft, Edit2 } from 'lucide-react';
 import EditableSection from '../components/EditableSection';
 import NothingCard from '../components/ArtCard';
+import { useData } from '../store/useData';
 
 export default function VerseDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const verse = useLiveQuery(() => id ? db.bibleVerses.get(id) : undefined, [id]);
-  const userData = useLiveQuery(() => id ? db.userData.get(id) : undefined, [id]);
+  const { bookmarks, updateBookmark } = useData();
+  const bookmark = bookmarks.find(b => b.id === id);
 
-  if (!verse || !userData) {
+  if (!bookmark) {
     return <div className="p-6 font-mono text-center mt-10 text-white/50 tracking-widest uppercase">Loading...</div>;
   }
 
-  const handleUpdate = async (field: keyof typeof userData, value: any) => {
+  const verse = bookmark.verse;
+
+  const handleUpdate = async (field: keyof typeof bookmark, value: any) => {
     if (id) {
-      await db.userData.update(id, { [field]: value });
+      await updateBookmark(id, { [field]: value });
     }
   };
 
@@ -38,7 +39,7 @@ export default function VerseDetail() {
         <div className="mb-12 mt-4 relative">
           <NothingCard 
              verseDetails={verse} 
-             userData={userData} 
+             userData={bookmark} 
              isFlipped={false} 
              onClick={() => {}} 
           />
@@ -48,7 +49,7 @@ export default function VerseDetail() {
           <div className="bg-[#111] p-5 border border-white/20">
              <EditableSection
               title="Tamil Explanation"
-              value={userData.tamilExplanation || ''}
+              value={bookmark.tamilExplanation || ''}
               onSave={(val) => handleUpdate('tamilExplanation', val)}
               placeholder="Add Tamil translation or notes..."
             />
@@ -57,7 +58,7 @@ export default function VerseDetail() {
           <div className="bg-[#111] p-5 border border-white/20">
             <EditableSection
               title="Personal Notes"
-              value={userData.personalNotes || ''}
+              value={bookmark.personalNotes || ''}
               onSave={(val) => handleUpdate('personalNotes', val)}
               placeholder="System log / notes..."
             />

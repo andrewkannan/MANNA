@@ -1,56 +1,58 @@
-import express from 'express';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import express from "express";
+import { PrismaClient } from "@prisma/client";
+import { authenticate } from "./auth.js";
 
+const prisma = new PrismaClient();
 const router = express.Router();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const dbPath = path.join(__dirname, '../data.json');
-
-// Helper to read DB
-const readDB = () => {
-  try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    return { activeVerse: null };
-  }
-};
-
-// Helper to write DB
-const writeDB = (data) => {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
-};
-
 // ESP32 fetches the active verse
-router.get('/active', (req, res) => {
-  const db = readDB();
-  if (db.activeVerse) {
-    res.json(db.activeVerse);
-  } else {
-    res.status(404).json({ error: 'No active verse set.' });
+router.get("/active", async (req, res) => {
+  const { deviceId } = req.query;
+  if (!deviceId) return res.status(400).json({ error: "Missing deviceId" });
+
+  try {
+    const device = await prisma.device.findUnique({
+      where: { id: String(deviceId) },
+      include: { activeVerse: true }
+    });
+    
+    if (device && device.activeVerse) {
+      res.json(device.activeVerse);
+    } else {
+      res.status(404).json({ error: "No active verse set." });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-// React app sets the active verse
-router.post('/active', (req, res) => {
-  const { id, reference, text, imageUrl } = req.body;
-  if (!reference || !text) {
-    return res.status(400).json({ error: 'Missing verse data' });
+// React app sets the active verse for a device
+router.post("/active", authenticate, async (req, res) => {
+  const { deviceId, verseId } = req.body;
+  if (!deviceId || !verseId) {
+    return res.status(400).json({ error: "Missing deviceId or verseId" });
   }
   
-  const db = readDB();
-  db.activeVerse = {
-    id,
-    reference,
-    text,
-    imageUrl: imageUrl || '/images/world_map.jpg'
-  };
-  
-  writeDB(db);
-  res.json({ success: true, activeVerse: db.activeVerse });
+  try {
+    // Ensure the device belongs to the user
+    const device = await prisma.device.findFirst({
+      where: { id: deviceId, ownerId: req.userId }
+    });
+    
+    if (!device) return res.status(403).json({ error: "Forbidden" });
+    
+    await prisma.device.update({
+      where: { id: deviceId },
+      data: { activeVerseId: verseId }
+    });
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 export default router;
+

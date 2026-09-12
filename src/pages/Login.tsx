@@ -1,23 +1,42 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, Lock, Loader2 } from "lucide-react";
+import { useAuth } from "../store/useAuth";
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const setAuth = useAuth(state => state.setAuth);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Dummy login logic for UI preview
-    setTimeout(() => {
-      localStorage.setItem("manna_token", "dummy_token");
-      setLoading(false);
+    setError("");
+    
+    try {
+      const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Authentication failed");
+      }
+      
+      setAuth(data.token, data.user);
       navigate("/bookmarks");
-    }, 1000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -28,6 +47,12 @@ export default function Login() {
           Neural Sync Portal
         </p>
         
+        {error && (
+          <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 mb-6 text-xs font-mono uppercase tracking-widest text-center">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
             <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" size={20} />

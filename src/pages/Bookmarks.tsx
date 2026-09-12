@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/db';
 import { Search, Plus, CloudDownload, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useData } from '../store/useData';
 
 export default function Bookmarks() {
   const [search, setSearch] = useState('');
@@ -10,46 +9,27 @@ export default function Bookmarks() {
   const [newRef, setNewRef] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const appState = useLiveQuery(() => db.appState.get('singleton' as any));
-
-  const verses = useLiveQuery(
-    () => db.bibleVerses
-      .filter(v => v.reference.toLowerCase().includes(search.toLowerCase()) || v.text.toLowerCase().includes(search.toLowerCase()))
-      .toArray(),
-    [search]
+  const { bookmarks, addBookmark } = useData();
+  const verses = bookmarks.filter(b => 
+    b.verse.reference.toLowerCase().includes(search.toLowerCase()) || 
+    b.verse.text.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleDownloadVerse = async () => {
     if (!newRef.trim()) return;
     setIsLoading(true);
     try {
-      const translation = appState?.preferredVersion || 'web';
-      const res = await fetch(`/api/bible/search?ref=${encodeURIComponent(newRef)}&translation=${translation}`);
+      const res = await fetch(`/api/bible/search?ref=${encodeURIComponent(newRef)}&translation=web`);
       const data = await res.json();
       
       if (data.reference && data.text) {
-        const id = `verse_${Date.now()}`;
-        await db.bibleVerses.add({
-          id,
+        await addBookmark({
           reference: data.reference,
           text: data.text,
           book: data.reference.split(' ')[0],
           chapter: 1, // simplified
           verse: 1,
-          version: translation.toUpperCase()
-        });
-        await db.userData.add({
-          verseId: id,
-          status: 'NEW',
-          dueDate: Date.now(),
-          lastReviewed: null,
-          difficulty: 1,
-          streak: 0,
-          tamilExplanation: '',
-          personalNotes: '',
-          themes: [],
-          categoryId: null,
-          imageUrl: '/images/world_map.jpg'
+          version: 'WEB'
         });
         setNewRef('');
         setShowAdd(false);
@@ -104,11 +84,11 @@ export default function Bookmarks() {
         )}
 
         <div className="space-y-4">
-          {verses?.map((verse) => (
-            <Link key={verse.id} to={`/verse/${verse.id}`} className="block group">
+          {verses?.map((bookmark) => (
+            <Link key={bookmark.id} to={`/verse/${bookmark.id}`} className="block group">
               <div className="p-5 bg-transparent border border-white/20 rounded-xl group-hover:border-red-600 group-hover:bg-[#111] transition-all">
-                <h3 className="font-mono text-[10px] font-bold text-red-500 tracking-[0.2em] uppercase mb-2">{verse.reference}</h3>
-                <p className="text-white/80 font-sans text-sm leading-snug line-clamp-2">{verse.text}</p>
+                <h3 className="font-mono text-[10px] font-bold text-red-500 tracking-[0.2em] uppercase mb-2">{bookmark.verse.reference}</h3>
+                <p className="text-white/80 font-sans text-sm leading-snug line-clamp-2">{bookmark.verse.text}</p>
               </div>
             </Link>
           ))}

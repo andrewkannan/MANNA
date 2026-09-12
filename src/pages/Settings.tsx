@@ -2,10 +2,15 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Download, Upload, Bell, Wand2, BookOpen, Monitor } from 'lucide-react';
 import { db } from '../db/db';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useAuth } from '../store/useAuth';
+
+import { useData } from '../store/useData';
 
 export default function Settings() {
   const navigate = useNavigate();
   const appState = useLiveQuery(() => db.appState.get('singleton' as any));
+
+  const { addBookmark } = useData();
 
   const handleExport = async () => {
     const verses = await db.bibleVerses.toArray();
@@ -27,6 +32,23 @@ export default function Settings() {
     URL.revokeObjectURL(url);
   };
 
+  const handleMigrate = async () => {
+    const verses = await db.bibleVerses.toArray();
+    let migrated = 0;
+    for (const v of verses) {
+      await addBookmark({
+        reference: v.reference,
+        text: v.text,
+        book: v.book,
+        chapter: v.chapter,
+        verse: v.verse,
+        version: v.version
+      });
+      migrated++;
+    }
+    alert(`Migrated ${migrated} verses to the cloud!`);
+  };
+
   return (
     <div className="min-h-full pb-24 bg-black text-white font-sans">
       <header className="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/10 px-6 py-4 flex items-center z-10">
@@ -40,17 +62,17 @@ export default function Settings() {
         <div className="mb-10">
           <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Data Protocol</h2>
           <div className="bg-[#111] border border-white/20">
+            <button onClick={handleMigrate} className="w-full p-4 border-b border-white/20 flex items-center gap-4 hover:bg-white hover:text-black transition-colors text-white">
+              <Upload size={18} strokeWidth={2} />
+              <span className="font-mono text-xs uppercase tracking-widest font-bold text-left leading-tight">Migrate Local DB to Cloud (One-time)</span>
+            </button>
             <button onClick={handleExport} className="w-full p-4 border-b border-white/20 flex items-center gap-4 hover:bg-white hover:text-black transition-colors text-white">
               <Download size={18} strokeWidth={2} />
               <span className="font-mono text-xs uppercase tracking-widest font-bold">Export Backup</span>
             </button>
-            <button className="w-full p-4 flex items-center gap-4 opacity-40 cursor-not-allowed text-white">
-              <Upload size={18} strokeWidth={2} />
-              <span className="font-mono text-xs uppercase tracking-widest font-bold">Import Backup</span>
-            </button>
             <button 
               onClick={() => {
-                localStorage.removeItem('manna_token');
+                useAuth.getState().logout();
                 navigate('/login');
               }}
               className="w-full p-4 flex items-center gap-4 hover:bg-white hover:text-black transition-colors text-red-500 font-mono text-xs uppercase tracking-widest font-bold border-t border-white/20"

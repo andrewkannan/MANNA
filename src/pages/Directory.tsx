@@ -13,6 +13,8 @@ interface ChapterVerse {
   text: string;
 }
 
+import { useData } from '../store/useData';
+
 export default function Directory() {
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<string | null>(null);
@@ -20,9 +22,8 @@ export default function Directory() {
   const [verses, setVerses] = useState<ChapterVerse[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // We need this to check which verses are already in the library
-  const libraryVerses = useLiveQuery(() => db.bibleVerses.toArray());
-  const libraryRefs = new Set(libraryVerses?.map(v => v.reference) || []);
+  const { bookmarks, addBookmark } = useData();
+  const libraryRefs = new Set(bookmarks.map(b => b.verse.reference));
 
   const appState = useLiveQuery(() => db.appState.get('singleton' as any));
 
@@ -50,28 +51,13 @@ export default function Directory() {
 
   const addVerse = async (v: ChapterVerse) => {
     const reference = `${selectedBook} ${selectedChapter}:${v.verse}`;
-    const id = `verse_${Date.now()}_${v.verse}`;
-    await db.bibleVerses.add({
-      id,
+    await addBookmark({
       reference,
       text: v.text,
       book: selectedBook!,
       chapter: selectedChapter!,
       verse: v.verse,
       version: (appState?.preferredVersion || 'web').toUpperCase()
-    });
-    await db.userData.add({
-      verseId: id,
-      status: 'NEW',
-      dueDate: Date.now(),
-      lastReviewed: null,
-      difficulty: 1,
-      streak: 0,
-      tamilExplanation: '',
-      personalNotes: '',
-      themes: [],
-      categoryId: null,
-      imageUrl: '/images/world_map.jpg'
     });
   };
 

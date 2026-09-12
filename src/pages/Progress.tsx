@@ -2,15 +2,18 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Activity, Flame, Target, BrainCircuit } from 'lucide-react';
 
+import { useData } from '../store/useData';
+import { useAuth } from '../store/useAuth';
+
 export default function Progress() {
-  const allUserData = useLiveQuery(() => db.userData.toArray());
+  const { bookmarks } = useData();
   const appState = useLiveQuery(() => db.appState.get('singleton' as any));
 
   const stats = {
-    total: allUserData?.length || 0,
-    mastered: allUserData?.filter(v => v.status === 'MASTERED').length || 0,
-    learning: allUserData?.filter(v => v.status === 'LEARNING' || v.status === 'REVIEW').length || 0,
-    new: allUserData?.filter(v => v.status === 'NEW').length || 0,
+    total: bookmarks.length || 0,
+    mastered: bookmarks.filter(v => v.status === 'MASTERED').length || 0,
+    learning: bookmarks.filter(v => v.status === 'LEARNING' || v.status === 'REVIEW').length || 0,
+    new: bookmarks.filter(v => v.status === 'NEW').length || 0,
   };
 
   return (

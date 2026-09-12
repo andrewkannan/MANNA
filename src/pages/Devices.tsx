@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Monitor, Plus, X, Loader2 } from "lucide-react";
+import { useAuth } from "../store/useAuth";
 
 export default function Devices() {
   const [devices, setDevices] = useState<{ id: string; name: string }[]>([]);
@@ -7,28 +8,67 @@ export default function Devices() {
   const [deviceName, setDeviceName] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPairing, setShowPairing] = useState(false);
+  const [error, setError] = useState("");
+  
+  const token = useAuth(state => state.token);
+
+  const fetchDevices = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch("/api/devices", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDevices(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
-    // Dummy fetch for UI
-    setDevices([{ id: "dev_1", name: "Living Room Display" }]);
-  }, []);
+    fetchDevices();
+  }, [token]);
 
   const handlePair = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pairingCode.trim()) return;
     setLoading(true);
-    // Dummy logic
-    setTimeout(() => {
-      setDevices([...devices, { id: Date.now().toString(), name: deviceName || "T-Display-S3" }]);
+    setError("");
+    try {
+      const res = await fetch("/api/devices/claim", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ pairingCode, name: deviceName })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      await fetchDevices();
       setPairingCode("");
       setDeviceName("");
       setShowPairing(false);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
-  const handleUnlink = (id: string) => {
-    setDevices(devices.filter(d => d.id !== id));
+  const handleUnlink = async (id: string) => {
+    try {
+      await fetch(`/api/devices/unlink/${id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await fetchDevices();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -49,6 +89,12 @@ export default function Devices() {
       </header>
 
       <main className="px-6 py-6 space-y-6">
+        {error && (
+          <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 text-xs font-mono uppercase tracking-widest text-center">
+            {error}
+          </div>
+        )}
+
         {showPairing && (
           <div className="bg-[#111] border border-white/20 p-5 shadow-[4px_4px_0px_0px_rgba(255,0,0,0.5)]">
             <h2 className="font-mono text-xs font-bold uppercase tracking-widest text-red-500 mb-4">Pair New Device</h2>
@@ -90,7 +136,7 @@ export default function Devices() {
               <div key={device.id} className="bg-[#111] border border-white/10 p-5 flex items-center gap-4">
                 <Monitor className="text-white/50" size={24} />
                 <div className="flex-1">
-                  <h3 className="font-mono text-sm font-bold tracking-widest uppercase">{device.name}</h3>
+                  <h3 className="font-mono text-sm font-bold tracking-widest uppercase">{device.name || "T-Display-S3"}</h3>
                   <p className="font-sans text-[10px] text-white/40">ID: {device.id}</p>
                 </div>
                 <button 

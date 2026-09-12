@@ -1,34 +1,21 @@
 import { useState, useEffect } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/db';
 import { calculateNextReview } from '../utils/srs';
 import NothingCard from '../components/ArtCard';
 import { BrainCircuit, Check, X, RotateCw } from 'lucide-react';
+import { useData } from '../store/useData';
 
 export default function Memorize() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const activeVerses = useLiveQuery(() => 
-    db.userData.filter(v => v.dueDate <= Date.now() || v.status === 'NEW').toArray()
-  );
-
-  const activeVerseDetails = useLiveQuery(
-    () => {
-      if (!activeVerses) return [];
-      const ids = activeVerses.map(v => v.verseId);
-      return db.bibleVerses.where('id').anyOf(ids).toArray();
-    },
-    [activeVerses]
-  );
+  const { bookmarks, updateBookmark } = useData();
+  const activeBookmarks = bookmarks.filter(b => b.dueDate <= Date.now() || b.status === 'NEW');
 
   useEffect(() => {
     setIsFlipped(false);
   }, [currentIndex]);
 
-  if (!activeVerses || !activeVerseDetails) return <div className="p-8 text-white font-mono text-xs tracking-widest uppercase bg-black min-h-screen">Initializing...</div>;
-  
-  if (activeVerses.length === 0) {
+  if (activeBookmarks.length === 0) {
     return (
       <div className="min-h-full flex flex-col items-center justify-center p-6 bg-black text-white text-center">
         <BrainCircuit size={48} className="text-white/20 mb-6" strokeWidth={1} />
@@ -38,8 +25,8 @@ export default function Memorize() {
     );
   }
 
-  const currentData = activeVerses[currentIndex];
-  const currentDetails = activeVerseDetails.find(v => v.id === currentData.verseId);
+  const currentBookmark = activeBookmarks[currentIndex];
+  const currentVerse = currentBookmark.verse;
 
   const handleScore = async (score: 1 | 2 | 3 | 4) => {
     let result: 'EASY' | 'GOOD' | 'PRACTICE' | 'DIFFICULT' = 'GOOD';
@@ -48,30 +35,15 @@ export default function Memorize() {
     if (score === 3) result = 'GOOD';
     if (score === 4) result = 'EASY';
 
-    const updates = calculateNextReview(currentData, result);
-    await db.userData.update(currentData.verseId, updates);
+    const updates = calculateNextReview(currentBookmark, result);
+    await updateBookmark(currentBookmark.id, updates);
     
-    // update streak
-    const appState = await db.appState.get('singleton' as any);
-    if (appState) {
-      const today = new Date().setHours(0,0,0,0);
-      let newStreak = appState.currentStreak;
-      if (appState.lastActiveDate !== today) {
-         newStreak += 1;
-      }
-      await db.appState.update('singleton' as any, {
-        lastActiveDate: today,
-        currentStreak: newStreak,
-        longestStreak: Math.max(appState.longestStreak, newStreak)
-      });
-    }
+    // Streaks logic could be moved to backend/user model in the future
     
-    if (currentIndex < activeVerses.length - 1) {
+    if (currentIndex < activeBookmarks.length - 1) {
       setCurrentIndex(prev => prev + 1);
     }
   };
-
-  if (!currentDetails) return null;
 
   return (
     <div className="min-h-full bg-black text-white flex flex-col pb-24">
@@ -84,15 +56,15 @@ export default function Memorize() {
           </p>
         </div>
         <div className="text-right">
-          <p className="font-sans font-black text-2xl">{currentIndex + 1}<span className="text-white/30 text-lg">/{activeVerses.length}</span></p>
+          <p className="font-sans font-black text-2xl">{currentIndex + 1}<span className="text-white/30 text-lg">/{activeBookmarks.length}</span></p>
           <p className="font-mono text-white/50 text-[10px] tracking-[0.2em] uppercase">Queue</p>
         </div>
       </header>
 
       <main className="flex-1 px-6 py-8 flex flex-col justify-center max-w-[400px] mx-auto w-full">
         <NothingCard 
-          verseDetails={currentDetails}
-          userData={currentData}
+          verseDetails={currentVerse}
+          userData={currentBookmark}
           isFlipped={isFlipped}
           onClick={() => setIsFlipped(!isFlipped)}
         />

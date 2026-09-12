@@ -1,48 +1,58 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/db';
+import { useState, useEffect } from 'react';
 import { Monitor, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useData } from '../store/useData';
+import { useAuth } from '../store/useAuth';
 
 export default function DisplayControl() {
-  const appState = useLiveQuery(() => db.appState.get('singleton' as any));
-  const libraryVerses = useLiveQuery(() => db.bibleVerses.toArray());
-  const userData = useLiveQuery(() => db.userData.toArray());
+  const { bookmarks } = useData();
+  const token = useAuth(state => state.token);
   const [search, setSearch] = useState('');
+  const [devices, setDevices] = useState<any[]>([]);
+  const [activeVerseId, setActiveVerseId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch('/api/devices', { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => {
+        setDevices(data);
+        if (data.length > 0 && data[0].activeVerseId) {
+          setActiveVerseId(data[0].activeVerseId);
+        }
+      });
+  }, [token]);
 
   const handleSetDisplay = async (verseId: string) => {
-    if (appState) {
-      await db.appState.update('singleton' as any, { displayVerseId: verseId });
-      
-      // Sync with server for the hardware display
-      const verse = libraryVerses?.find(v => v.id === verseId);
-      const uData = userData?.find(v => v.verseId === verseId);
-      
-      if (verse) {
-        try {
-          await fetch('/api/display/active', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: verse.id,
-              reference: verse.reference,
-              text: verse.text,
-              imageUrl: uData?.imageUrl || '/images/world_map.jpg'
-            })
-          });
-        } catch (err) {
-          console.error("Failed to sync with display server:", err);
-        }
+    setActiveVerseId(verseId);
+    if (!token) return;
+    
+    // Sync with server for all devices
+    for (const device of devices) {
+      try {
+        await fetch('/api/display/active', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            deviceId: device.id,
+            verseId: verseId
+          })
+        });
+      } catch (err) {
+        console.error("Failed to sync with display server:", err);
       }
     }
   };
 
-  const filteredVerses = libraryVerses?.filter(v => 
-    v.reference.toLowerCase().includes(search.toLowerCase()) || 
-    v.text.toLowerCase().includes(search.toLowerCase())
+  const filteredBookmarks = bookmarks.filter(b => 
+    b.verse.reference.toLowerCase().includes(search.toLowerCase()) || 
+    b.verse.text.toLowerCase().includes(search.toLowerCase())
   );
 
-  const activeVerse = libraryVerses?.find(v => v.id === appState?.displayVerseId);
-  const activeUserData = userData?.find(v => v.verseId === appState?.displayVerseId);
+  const activeBookmark = bookmarks.find(b => b.verse.id === activeVerseId);
+  const activeVerse = activeBookmark?.verse;
 
   return (
     <div className="min-h-full pb-24 bg-black text-white">
@@ -65,7 +75,7 @@ export default function DisplayControl() {
             />
             <div 
               className="h-32 w-full bg-cover bg-center relative grayscale contrast-150 opacity-30 z-10"
-              style={{ backgroundImage: `url(${activeUserData?.imageUrl || '/images/world_map.jpg'})` }}
+              style={{ backgroundImage: `url(${activeBookmark?.imageUrl || '/images/world_map.jpg'})` }}
             >
               <div className="absolute inset-0 bg-black/50" />
             </div>
@@ -118,18 +128,18 @@ export default function DisplayControl() {
         </div>
 
         <div className="space-y-3 h-[300px] overflow-y-auto pr-2 pb-10">
-          {filteredVerses?.map((verse) => (
+          {filteredBookmarks.map((bookmark) => (
             <div 
-              key={verse.id} 
-              onClick={() => handleSetDisplay(verse.id)}
+              key={bookmark.id} 
+              onClick={() => handleSetDisplay(bookmark.verse.id)}
               className={`p-4 border rounded-xl cursor-pointer transition-all ${
-                appState?.displayVerseId === verse.id 
+                activeVerseId === bookmark.verse.id 
                   ? 'bg-[#111] border-red-600' 
                   : 'bg-transparent border-white/10 hover:border-white/30'
               }`}
             >
-              <h3 className="font-mono text-[10px] text-red-500 font-bold tracking-[0.2em] uppercase mb-1">{verse.reference}</h3>
-              <p className="text-white/80 font-sans text-xs line-clamp-1">{verse.text}</p>
+              <h3 className="font-mono text-[10px] text-red-500 font-bold tracking-[0.2em] uppercase mb-1">{bookmark.verse.reference}</h3>
+              <p className="text-white/80 font-sans text-xs line-clamp-1">{bookmark.verse.text}</p>
             </div>
           ))}
         </div>

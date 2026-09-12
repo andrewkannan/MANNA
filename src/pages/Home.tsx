@@ -2,18 +2,21 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { useNavigate } from 'react-router-dom';
 import { Play, Settings as SettingsIcon } from 'lucide-react';
+import { useData } from '../store/useData';
+import { useAuth } from '../store/useAuth';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { bookmarks = [], loading } = useData();
+  const user = useAuth(state => state.user);
 
-  const allUserData = useLiveQuery(() => db.userData.toArray());
   const appState = useLiveQuery(() => db.appState.get('singleton' as any));
 
   const stats = {
-    total: allUserData?.length || 0,
-    due: allUserData?.filter(v => v.status !== 'NEW' && v.dueDate <= Date.now()).length || 0,
-    new: allUserData?.filter(v => v.status === 'NEW').length || 0,
-    mastered: allUserData?.filter(v => v.status === 'MASTERED').length || 0,
+    total: bookmarks?.length || 0,
+    due: bookmarks?.filter(v => v.status !== 'NEW' && v.dueDate <= Date.now()).length || 0,
+    new: bookmarks?.filter(v => v.status === 'NEW').length || 0,
+    mastered: bookmarks?.filter(v => v.status === 'MASTERED').length || 0,
   };
 
   return (

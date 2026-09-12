@@ -8,8 +8,9 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_for_dev";
 
 router.post("/register", async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+  const { email: rawEmail, password } = req.body;
+  if (!rawEmail || !password) return res.status(400).json({ error: "Email and password required" });
+  const email = rawEmail.toLowerCase().trim();
   try {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(400).json({ error: "User already exists" });
@@ -29,7 +30,9 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email: rawEmail, password } = req.body;
+  if (!rawEmail || !password) return res.status(400).json({ error: "Email and password required" });
+  const email = rawEmail.toLowerCase().trim();
   try {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(400).json({ error: "Invalid credentials" });

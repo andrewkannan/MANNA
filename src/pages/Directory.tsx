@@ -22,8 +22,8 @@ export default function Directory() {
   const [verses, setVerses] = useState<ChapterVerse[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const { bookmarks, addBookmark } = useData();
-  const libraryRefs = new Set(bookmarks.map(b => b.verse.reference));
+  const { bookmarks, addBookmark, deleteBookmark } = useData();
+  const libraryRefs = new Map(bookmarks.map(b => [b.verse.reference, b.id]));
 
   const appState = useLiveQuery(() => db.appState.get('singleton' as any));
 
@@ -49,16 +49,20 @@ export default function Directory() {
     }
   };
 
-  const addVerse = async (v: ChapterVerse) => {
-    const reference = `${selectedBook} ${selectedChapter}:${v.verse}`;
-    await addBookmark({
-      reference,
-      text: v.text,
-      book: selectedBook!,
-      chapter: selectedChapter!,
-      verse: v.verse,
-      version: (appState?.preferredVersion || 'web').toUpperCase()
-    });
+  const toggleVerse = async (v: ChapterVerse, bookmarkId: string | undefined) => {
+    if (bookmarkId) {
+      await deleteBookmark(bookmarkId);
+    } else {
+      const reference = `${selectedBook} ${selectedChapter}:${v.verse}`;
+      await addBookmark({
+        reference,
+        text: v.text,
+        book: selectedBook!,
+        chapter: selectedChapter!,
+        verse: v.verse,
+        version: (appState?.preferredVersion || 'web').toUpperCase()
+      });
+    }
   };
 
   const goBack = () => {
@@ -144,7 +148,7 @@ export default function Directory() {
         {selectedChapter && (
           <div className="space-y-4">
             <p className="font-mono text-white/50 text-[10px] tracking-[0.2em] uppercase text-center mb-6">
-              Double-tap any verse to bookmark
+              Double-tap any verse to toggle bookmark
             </p>
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 text-white/30">
@@ -154,24 +158,24 @@ export default function Directory() {
             ) : (
               verses.map((v) => {
                 const ref = `${selectedBook} ${selectedChapter}:${v.verse}`;
-                const isAdded = libraryRefs.has(ref);
+                const bookmarkId = libraryRefs.get(ref);
+                const isAdded = !!bookmarkId;
                 
                 return (
                   <div 
                     key={v.verse} 
-                    onDoubleClick={() => !isAdded && addVerse(v)}
-                    className={`p-4 border select-none ${isAdded ? 'border-white/10 bg-black' : 'border-white/20 bg-[#111]'} flex gap-4 relative overflow-hidden`}
+                    onDoubleClick={() => toggleVerse(v, bookmarkId)}
+                    className={`p-4 border select-none transition-colors ${isAdded ? 'border-red-500 bg-red-950/20' : 'border-white/20 bg-[#111]'} flex gap-4 relative overflow-hidden`}
                   >
                     <div className="font-mono font-bold text-red-500 text-sm">{v.verse}</div>
                     <div className="flex-1">
-                      <p className={`font-sans text-sm leading-relaxed ${isAdded ? 'text-white/40' : 'text-white/90'}`}>{v.text}</p>
+                      <p className={`font-sans text-sm leading-relaxed ${isAdded ? 'text-white font-bold' : 'text-white/90'}`}>{v.text}</p>
                     </div>
                     <button 
-                      onClick={() => !isAdded && addVerse(v)}
-                      disabled={isAdded}
+                      onClick={() => toggleVerse(v, bookmarkId)}
                       className={`w-10 h-10 shrink-0 flex items-center justify-center border transition-colors ${
                         isAdded 
-                          ? 'border-transparent text-green-500' 
+                          ? 'border-transparent text-green-500 hover:text-red-500' 
                           : 'border-white/20 text-white hover:bg-white hover:text-black hover:border-white'
                       }`}
                     >

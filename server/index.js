@@ -23,10 +23,12 @@ app.use(express.json());
 import authRoutes from './routes/auth.js';
 import devicesRoutes from './routes/devices.js';
 import bookmarksRoutes from './routes/bookmarks.js';
+import adminRoutes from './routes/admin.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/devices', devicesRoutes);
 app.use('/api/bookmarks', bookmarksRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/display', displayRoutes);
 app.use('/api/bible', bibleRoutes);
 

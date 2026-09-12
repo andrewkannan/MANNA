@@ -13,6 +13,7 @@ import DisplayControl from './pages/DisplayControl';
 import Directory from './pages/Directory';
 import Login from './pages/Login';
 import Devices from './pages/Devices';
+import Admin from './pages/Admin';
 import { initializeDatabase } from './db/seedDatabase';
 
 import { Navigate, Outlet } from 'react-router-dom';
@@ -63,6 +64,7 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="memorize" element={<Memorize />} />
             <Route path="devices" element={<Devices />} />
+            <Route path="manage" element={<Admin />} />
           </Route>
         </Route>
         <Route path="/login" element={<Login />} />

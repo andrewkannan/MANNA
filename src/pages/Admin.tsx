@@ -63,9 +63,21 @@ export default function Admin() {
                         {u.role}
                       </span>
                     </div>
-                    <div className="flex gap-4 font-mono text-[10px] text-white/40 uppercase tracking-widest">
-                      <span>Bookmarks: {u._count.bookmarks}</span>
-                      <span>Devices: {u._count.devices}</span>
+                    <div className="flex justify-between items-end">
+                      <div className="flex gap-4 font-mono text-[10px] text-white/40 uppercase tracking-widest">
+                        <span>Bookmarks: {u._count.bookmarks}</span>
+                        <span>Devices: {u._count.devices}</span>
+                      </div>
+                      <button 
+                        onClick={async () => {
+                          const res = await fetch(`/api/auth/seed-152?email=${u.email}`);
+                          const data = await res.json();
+                          alert(data.message || data.error);
+                        }}
+                        className="font-mono text-[10px] uppercase tracking-widest bg-white/10 hover:bg-white hover:text-black text-white px-3 py-1 rounded transition-colors"
+                      >
+                        Seed 152
+                      </button>
                     </div>
                   </div>
                 ))}

@@ -46,26 +46,52 @@ router.get("/repair", async (req, res) => {
     let fixed = 0;
     for (const v of badVerses) {
       try {
-        const response = await fetch(`https://bible-api.com/${encodeURIComponent(v.reference)}?translation=kjv`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.text) {
-            await prisma.verse.update({
-              where: { id: v.id },
-              data: { text: data.text.trim() }
-            });
-            fixed++;
-          }
+        // e.g. v.reference = "Exodus 31:3-5"
+        const refParts = v.reference.split(" ");
+        if (refParts.length < 2) continue;
+        
+        const bookName = refParts.slice(0, -1).join(" ");
+        const chapterAndVerse = refParts[refParts.length - 1];
+        
+        const [chapterStr, verseStr] = chapterAndVerse.split(":");
+        if (!chapterStr || !verseStr) continue;
+        
+        const chapter = parseInt(chapterStr);
+        let startVerse = parseInt(verseStr);
+        let endVerse = startVerse;
+        
+        if (verseStr.includes("-")) {
+          const range = verseStr.split("-");
+          startVerse = parseInt(range[0]);
+          endVerse = parseInt(range[1]);
+        }
+
+        // Query our local DB for these verses
+        const localVerses = await prisma.verse.findMany({
+          where: {
+            book: bookName,
+            chapter: chapter,
+            version: "KJV",
+            verse: { gte: startVerse, lte: endVerse }
+          },
+          orderBy: { verse: 'asc' }
+        });
+
+        if (localVerses.length > 0) {
+          const combinedText = localVerses.map(lv => lv.text).join(" ");
+          await prisma.verse.update({
+            where: { id: v.id },
+            data: { text: combinedText }
+          });
+          fixed++;
         }
       } catch (err) {
-        console.error("Fetch failed for", v.reference);
+        console.error("Local repair failed for", v.reference, err);
       }
-      // wait 200ms to avoid rate limit
-      await new Promise(r => setTimeout(r, 200));
     }
-    res.json({ success: true, message: `Repaired ${fixed} out of ${badVerses.length} broken verses!` });
+    res.json({ success: true, message: `Repaired ${fixed} out of ${badVerses.length} broken verses using local Postgres!` });
   } catch (err) {
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error", details: err.message });
   }
 });
 

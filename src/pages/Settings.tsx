@@ -26,46 +26,46 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-full pb-24 bg-[#F9F6F0]">
-      <header className="sticky top-0 bg-[#F9F6F0]/90 backdrop-blur-md border-b border-[#EAE5D9] px-4 py-3 flex items-center z-10">
-        <button onClick={() => navigate(-1)} className="flex items-center text-[#2C2825] hover:opacity-70 transition-opacity">
-          <ChevronLeft size={28} strokeWidth={1.5} className="-ml-2" />
+    <div className="min-h-full pb-24 bg-black text-white font-sans">
+      <header className="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/10 px-6 py-4 flex items-center z-10">
+        <button onClick={() => navigate(-1)} className="flex items-center text-white hover:text-red-500 transition-colors">
+          <ChevronLeft size={28} strokeWidth={2} className="-ml-2" />
         </button>
-        <span className="font-serif text-lg text-[#2C2825] ml-2">Settings</span>
+        <span className="font-mono text-sm tracking-[0.2em] font-bold uppercase ml-2 text-white">System Config</span>
       </header>
 
-      <div className="p-6 max-w-[500px] mx-auto">
+      <div className="p-6 max-w-[400px] mx-auto">
         <div className="mb-10">
-          <h2 className="font-serif text-[#8B4513] uppercase tracking-widest text-sm mb-4">Data & Backup</h2>
-          <div className="bg-[#FDFBF7] border border-[#EAE5D9] rounded-lg shadow-sm overflow-hidden">
-            <button onClick={handleExport} className="w-full p-4 border-b border-[#EAE5D9] flex items-center gap-4 hover:bg-[#F9F6F0] transition-colors text-[#2C2825]">
-              <Download size={20} strokeWidth={1.5} />
-              <span className="font-serif">Export Backup</span>
+          <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Data Protocol</h2>
+          <div className="bg-[#111] border border-white/20">
+            <button onClick={handleExport} className="w-full p-4 border-b border-white/20 flex items-center gap-4 hover:bg-white hover:text-black transition-colors text-white">
+              <Download size={18} strokeWidth={2} />
+              <span className="font-mono text-xs uppercase tracking-widest font-bold">Export Backup</span>
             </button>
-            <button className="w-full p-4 flex items-center gap-4 opacity-40 cursor-not-allowed text-[#2C2825]">
-              <Upload size={20} strokeWidth={1.5} />
-              <span className="font-serif">Import Backup</span>
+            <button className="w-full p-4 flex items-center gap-4 opacity-40 cursor-not-allowed text-white">
+              <Upload size={18} strokeWidth={2} />
+              <span className="font-mono text-xs uppercase tracking-widest font-bold">Import Backup</span>
             </button>
           </div>
-          <p className="mt-3 text-xs font-serif italic text-[#4A4541] opacity-70">Data is securely stored locally on your device.</p>
+          <p className="mt-3 text-[10px] font-mono uppercase tracking-widest text-white/40">Data is securely stored locally.</p>
         </div>
 
         <div className="mb-10">
-          <h2 className="font-serif text-[#8B4513] uppercase tracking-widest text-sm mb-4">AI Features</h2>
-          <div className="bg-[#FDFBF7] border border-[#EAE5D9] rounded-lg shadow-sm p-5">
-            <div className="flex items-start gap-4 mb-4 text-[#2C2825]">
-              <Wand2 size={20} strokeWidth={1.5} className="mt-1" />
+          <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Neural Engine</h2>
+          <div className="bg-[#111] border border-white/20 p-5">
+            <div className="flex items-start gap-4 mb-4 text-white">
+              <Wand2 size={18} strokeWidth={2} className="mt-0.5 text-red-500" />
               <div>
-                <p className="font-serif mb-2">Gemini API Key</p>
-                <p className="font-serif text-sm text-[#4A4541] leading-relaxed">
+                <p className="font-mono text-xs uppercase tracking-widest font-bold mb-2">Gemini API Key</p>
+                <p className="font-sans text-xs text-white/50 leading-relaxed">
                   Provide an API key to enable AI art generation for new verses. (Stored locally).
                 </p>
               </div>
             </div>
             <input 
               type="password"
-              placeholder="Enter Key..."
-              className="w-full bg-white border border-[#EAE5D9] rounded py-2 px-3 focus:outline-none focus:border-[#8B4513] font-serif text-[#2C2825]"
+              placeholder="ENTER KEY..."
+              className="w-full bg-black border border-white/20 py-3 px-4 focus:outline-none focus:border-red-500 font-mono text-sm text-white placeholder:text-white/30"
               onChange={async (e) => {
                 const val = e.target.value.trim();
                 const appState = await db.appState.get('singleton' as any);
@@ -78,14 +78,20 @@ export default function Settings() {
         </div>
 
         <div className="mb-10">
-          <h2 className="font-serif text-[#8B4513] uppercase tracking-widest text-sm mb-4">Reminders</h2>
-          <div className="bg-[#FDFBF7] border border-[#EAE5D9] rounded-lg shadow-sm p-5 opacity-60">
-            <div className="flex items-center gap-4 mb-2 text-[#2C2825]">
-              <Bell size={20} strokeWidth={1.5} />
-              <span className="font-serif">Push Notifications</span>
+          <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Notifications</h2>
+          <div className="bg-[#111] border border-white/20 p-5 opacity-50 relative overflow-hidden">
+            <div 
+              className="absolute inset-0 opacity-20 pointer-events-none"
+              style={{ 
+                backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #ffffff 10px, #ffffff 11px)'
+              }}
+            />
+            <div className="flex items-center gap-4 mb-2 text-white relative z-10">
+              <Bell size={18} strokeWidth={2} />
+              <span className="font-mono text-xs uppercase tracking-widest font-bold">Push Alerts</span>
             </div>
-            <p className="font-serif text-sm text-[#4A4541]">
-              Daily review reminders are not currently supported in this browser.
+            <p className="font-sans text-xs text-white/50 relative z-10">
+              Daily review reminders are not currently supported in this client.
             </p>
           </div>
         </div>

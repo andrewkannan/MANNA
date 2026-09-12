@@ -101,18 +101,40 @@ export default function Directory() {
 
       <main className="px-6 py-6">
         {!selectedBook && (
-          <div className="grid grid-cols-2 gap-3">
-            {books.map(b => (
-              <button 
-                key={b.name} 
-                onClick={() => setSelectedBook(b.name)}
-                className="bg-[#111] border border-white/10 p-4 text-left hover:border-red-500 transition-colors group relative overflow-hidden"
-              >
-                <Folder size={16} className="text-white/30 mb-3 group-hover:text-red-500 transition-colors" />
-                <h3 className="font-mono text-xs font-bold uppercase tracking-widest">{b.name}</h3>
-                <p className="text-[10px] text-white/50 font-mono">{b.chapters} CH</p>
-              </button>
-            ))}
+          <div className="space-y-8">
+            <div>
+              <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Old Testament</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {books.slice(0, 39).map(b => (
+                  <button 
+                    key={b.name} 
+                    onClick={() => setSelectedBook(b.name)}
+                    className="bg-[#111] border border-white/10 p-4 text-left hover:border-red-500 transition-colors group relative overflow-hidden"
+                  >
+                    <Folder size={16} className="text-white/30 mb-3 group-hover:text-red-500 transition-colors" />
+                    <h3 className="font-mono text-xs font-bold uppercase tracking-widest truncate">{b.name}</h3>
+                    <p className="text-[10px] text-white/50 font-mono">{b.chapters} CH</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">New Testament</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {books.slice(39).map(b => (
+                  <button 
+                    key={b.name} 
+                    onClick={() => setSelectedBook(b.name)}
+                    className="bg-[#111] border border-white/10 p-4 text-left hover:border-red-500 transition-colors group relative overflow-hidden"
+                  >
+                    <Folder size={16} className="text-white/30 mb-3 group-hover:text-red-500 transition-colors" />
+                    <h3 className="font-mono text-xs font-bold uppercase tracking-widest truncate">{b.name}</h3>
+                    <p className="text-[10px] text-white/50 font-mono">{b.chapters} CH</p>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 

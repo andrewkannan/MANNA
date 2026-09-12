@@ -12,6 +12,27 @@ export default function DisplayControl() {
   const handleSetDisplay = async (verseId: string) => {
     if (appState) {
       await db.appState.update('singleton' as any, { displayVerseId: verseId });
+      
+      // Sync with server for the hardware display
+      const verse = libraryVerses?.find(v => v.id === verseId);
+      const uData = userData?.find(v => v.verseId === verseId);
+      
+      if (verse) {
+        try {
+          await fetch('/api/display/active', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: verse.id,
+              reference: verse.reference,
+              text: verse.text,
+              imageUrl: uData?.imageUrl || '/images/world_map.jpg'
+            })
+          });
+        } catch (err) {
+          console.error("Failed to sync with display server:", err);
+        }
+      }
     }
   };
 

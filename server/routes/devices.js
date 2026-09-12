@@ -12,7 +12,7 @@ const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString(
 router.post("/register-hardware", async (req, res) => {
   const { macAddress } = req.body;
   try {
-    let device = await prisma.device.findFirst({ where: { macAddress } });
+    let device = await prisma.device.findUnique({ where: { macAddress } });
     if (!device) {
       device = await prisma.device.create({
         data: {
@@ -22,7 +22,7 @@ router.post("/register-hardware", async (req, res) => {
       });
     } else if (device.ownerId) {
       return res.json({ status: "paired", deviceId: device.id, ownerId: device.ownerId });
-    } else {
+    } else if (!device.pairingCode) {
       device = await prisma.device.update({
         where: { id: device.id },
         data: { pairingCode: generateCode() }

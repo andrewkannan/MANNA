@@ -20,6 +20,7 @@ model User {
 
 model Device {
   id          String   @id @default(uuid())
+  macAddress  String?  @unique
   pairingCode String?  @unique // 6-digit code displayed on screen
   name        String?
   ownerId     String?

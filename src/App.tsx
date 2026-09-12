@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import Home from './pages/Home';
-import Library from './pages/Library';
+import Bookmarks from './pages/Bookmarks';
 import VerseDetail from './pages/VerseDetail';
 import Progress from './pages/Progress';
 import Settings from './pages/Settings';
@@ -34,7 +34,7 @@ function App() {
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Home />} />
           <Route path="directory" element={<Directory />} />
-          <Route path="library" element={<Library />} />
+          <Route path="bookmarks" element={<Bookmarks />} />
           <Route path="verse/:id" element={<VerseDetail />} />
           <Route path="progress" element={<Progress />} />
           <Route path="display" element={<DisplayControl />} />

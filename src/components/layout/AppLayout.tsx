@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, BookOpen, BrainCircuit, Activity, Monitor, Database } from 'lucide-react';
+import { Home, Bookmark, BrainCircuit, Activity, Monitor, Database } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { useEffect } from 'react';
 
@@ -34,8 +34,8 @@ export default function AppLayout() {
         <NavLink to="/directory" className={navClass}>
           {({ isActive }) => <Database size={22} strokeWidth={isActive ? 2.5 : 1.5} />}
         </NavLink>
-        <NavLink to="/library" className={navClass}>
-          {({ isActive }) => <BookOpen size={22} strokeWidth={isActive ? 2.5 : 1.5} />}
+        <NavLink to="/bookmarks" className={navClass}>
+          {({ isActive }) => <Bookmark size={22} strokeWidth={isActive ? 2.5 : 1.5} />}
         </NavLink>
         <NavLink to="/display" className={navClass}>
           {({ isActive }) => <Monitor size={22} strokeWidth={isActive ? 2.5 : 1.5} />}

@@ -4,7 +4,7 @@ import { db } from '../db/db';
 import { Search, Plus, CloudDownload, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-export default function Library() {
+export default function Bookmarks() {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [newRef, setNewRef] = useState('');
@@ -66,7 +66,7 @@ export default function Library() {
   return (
     <div className="min-h-full pb-24 bg-black text-white">
       <header className="px-6 pt-12 pb-4 sticky top-0 bg-black/90 backdrop-blur-md z-10 border-b border-white/10">
-        <h1 className="text-4xl font-sans font-black tracking-tighter mb-6">LIBRARY</h1>
+        <h1 className="text-4xl font-sans font-black tracking-tighter mb-6">BOOKMARKS</h1>
         
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" size={20} strokeWidth={2} />

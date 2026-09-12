@@ -157,6 +157,9 @@ export default function Directory() {
 
         {selectedChapter && (
           <div className="space-y-4">
+            <p className="font-mono text-white/50 text-[10px] tracking-[0.2em] uppercase text-center mb-6">
+              Double-tap any verse to bookmark
+            </p>
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 text-white/30">
                 <Loader2 className="animate-spin mb-4" size={32} />
@@ -168,7 +171,11 @@ export default function Directory() {
                 const isAdded = libraryRefs.has(ref);
                 
                 return (
-                  <div key={v.verse} className={`p-4 border ${isAdded ? 'border-white/10 bg-black' : 'border-white/20 bg-[#111]'} flex gap-4 relative overflow-hidden`}>
+                  <div 
+                    key={v.verse} 
+                    onDoubleClick={() => !isAdded && addVerse(v)}
+                    className={`p-4 border select-none ${isAdded ? 'border-white/10 bg-black' : 'border-white/20 bg-[#111]'} flex gap-4 relative overflow-hidden`}
+                  >
                     <div className="font-mono font-bold text-red-500 text-sm">{v.verse}</div>
                     <div className="flex-1">
                       <p className={`font-sans text-sm leading-relaxed ${isAdded ? 'text-white/40' : 'text-white/90'}`}>{v.text}</p>

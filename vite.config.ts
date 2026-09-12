@@ -9,11 +9,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Word & Remember',
-        short_name: 'Word & Remember',
-        description: 'Personal Bible Memorization',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        name: 'MANNA',
+        short_name: 'MANNA',
+        description: 'Nothing OS Style Bible Display & Memorization',
+        theme_color: '#000000',
+        background_color: '#000000',
         display: 'standalone',
         icons: [
           {

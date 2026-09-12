@@ -25,11 +25,11 @@ router.get('/books', (req, res) => {
 });
 
 router.get('/chapter', async (req, res) => {
-  const { book, chapter } = req.query;
+  const { book, chapter, translation = 'web' } = req.query;
   if (!book || !chapter) return res.status(400).json({ error: 'Missing book or chapter' });
 
   try {
-    const response = await fetch(`https://bible-api.com/${encodeURIComponent(book + ' ' + chapter)}`);
+    const response = await fetch(`https://bible-api.com/${encodeURIComponent(book + ' ' + chapter)}?translation=${translation}`);
     if (!response.ok) throw new Error(`Bible API returned ${response.status}`);
     const data = await response.json();
     
@@ -46,13 +46,13 @@ router.get('/chapter', async (req, res) => {
 });
 
 router.get('/search', async (req, res) => {
-  const { ref } = req.query;
+  const { ref, translation = 'web' } = req.query;
   if (!ref) {
     return res.status(400).json({ error: 'Missing ref parameter' });
   }
 
   try {
-    const response = await fetch(`https://bible-api.com/${encodeURIComponent(ref)}`);
+    const response = await fetch(`https://bible-api.com/${encodeURIComponent(ref)}?translation=${translation}`);
     if (!response.ok) {
       throw new Error(`Bible API returned ${response.status}`);
     }

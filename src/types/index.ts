@@ -42,4 +42,5 @@ export interface AppState {
   longestStreak: number;
   geminiApiKey?: string;
   displayVerseId?: string | null;
+  preferredVersion?: string;
 }

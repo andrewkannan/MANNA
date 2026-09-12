@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download, Upload, Bell, Wand2 } from 'lucide-react';
+import { ChevronLeft, Download, Upload, Bell, Wand2, BookOpen } from 'lucide-react';
 import { db } from '../db/db';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 export default function Settings() {
   const navigate = useNavigate();
+  const appState = useLiveQuery(() => db.appState.get('singleton' as any));
 
   const handleExport = async () => {
     const verses = await db.bibleVerses.toArray();
@@ -52,6 +54,46 @@ export default function Settings() {
 
         <div className="mb-10">
           <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Neural Engine</h2>
+          <div className="bg-[#111] border border-white/20 p-5 mb-4">
+            <div className="flex items-start gap-4 mb-4 text-white">
+              <BookOpen size={18} strokeWidth={2} className="mt-0.5 text-red-500" />
+              <div className="w-full">
+                <p className="font-mono text-xs uppercase tracking-widest font-bold mb-2">Translation Protocol</p>
+                <p className="font-sans text-xs text-white/50 leading-relaxed mb-4">
+                  Select the default translation for new verses downloaded from the cloud directory.
+                </p>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={async () => {
+                      const appState = await db.appState.get('singleton' as any);
+                      if (appState) await db.appState.update('singleton' as any, { preferredVersion: 'web' });
+                    }}
+                    className={`flex-1 py-3 font-mono text-xs font-bold transition-colors border ${
+                      appState?.preferredVersion !== 'kjv' 
+                        ? 'bg-white text-black border-white' 
+                        : 'bg-black text-white/50 border-white/20 hover:text-white'
+                    }`}
+                  >
+                    WEB
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      const appState = await db.appState.get('singleton' as any);
+                      if (appState) await db.appState.update('singleton' as any, { preferredVersion: 'kjv' });
+                    }}
+                    className={`flex-1 py-3 font-mono text-xs font-bold transition-colors border ${
+                      appState?.preferredVersion === 'kjv' 
+                        ? 'bg-white text-black border-white' 
+                        : 'bg-black text-white/50 border-white/20 hover:text-white'
+                    }`}
+                  >
+                    KJV
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-[#111] border border-white/20 p-5">
             <div className="flex items-start gap-4 mb-4 text-white">
               <Wand2 size={18} strokeWidth={2} className="mt-0.5 text-red-500" />
@@ -68,8 +110,8 @@ export default function Settings() {
               className="w-full bg-black border border-white/20 py-3 px-4 focus:outline-none focus:border-red-500 font-mono text-sm text-white placeholder:text-white/30"
               onChange={async (e) => {
                 const val = e.target.value.trim();
-                const appState = await db.appState.get('singleton' as any);
-                if (appState) {
+                const state = await db.appState.get('singleton' as any);
+                if (state) {
                   await db.appState.update('singleton' as any, { geminiApiKey: val });
                 }
               }}

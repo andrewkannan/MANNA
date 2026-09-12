@@ -24,6 +24,8 @@ export default function Directory() {
   const libraryVerses = useLiveQuery(() => db.bibleVerses.toArray());
   const libraryRefs = new Set(libraryVerses?.map(v => v.reference) || []);
 
+  const appState = useLiveQuery(() => db.appState.get('singleton' as any));
+
   useEffect(() => {
     fetch('/api/bible/books')
       .then(res => res.json())
@@ -35,7 +37,8 @@ export default function Directory() {
     setSelectedBook(book);
     setSelectedChapter(chapter);
     try {
-      const res = await fetch(`/api/bible/chapter?book=${encodeURIComponent(book)}&chapter=${chapter}`);
+      const translation = appState?.preferredVersion || 'web';
+      const res = await fetch(`/api/bible/chapter?book=${encodeURIComponent(book)}&chapter=${chapter}&translation=${translation}`);
       const data = await res.json();
       setVerses(data);
     } catch (err) {
@@ -55,7 +58,7 @@ export default function Directory() {
       book: selectedBook!,
       chapter: selectedChapter!,
       verse: v.verse,
-      version: 'WEB'
+      version: (appState?.preferredVersion || 'web').toUpperCase()
     });
     await db.userData.add({
       verseId: id,

@@ -10,6 +10,8 @@ export default function Library() {
   const [newRef, setNewRef] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
+  const appState = useLiveQuery(() => db.appState.get('singleton' as any));
+
   const verses = useLiveQuery(
     () => db.bibleVerses
       .filter(v => v.reference.toLowerCase().includes(search.toLowerCase()) || v.text.toLowerCase().includes(search.toLowerCase()))
@@ -21,7 +23,8 @@ export default function Library() {
     if (!newRef.trim()) return;
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/bible/search?ref=${encodeURIComponent(newRef)}`);
+      const translation = appState?.preferredVersion || 'web';
+      const res = await fetch(`/api/bible/search?ref=${encodeURIComponent(newRef)}&translation=${translation}`);
       const data = await res.json();
       
       if (data.reference && data.text) {
@@ -33,7 +36,7 @@ export default function Library() {
           book: data.reference.split(' ')[0],
           chapter: 1, // simplified
           verse: 1,
-          version: 'WEB'
+          version: translation.toUpperCase()
         });
         await db.userData.add({
           verseId: id,

@@ -45,21 +45,39 @@ export default function Admin() {
       </header>
 
       <main className="px-6 py-6 space-y-8">
-        <button 
-          onClick={async () => {
-            if (!confirm("This will repair all broken verses in the database by fetching from bible-api.com. It may take 30 seconds.")) return;
-            try {
-              const res = await fetch("/api/admin/repair", { headers: { Authorization: `Bearer ${token}` } });
-              const data = await res.json();
-              alert(data.message || data.error);
-            } catch (err) {
-              alert("Repair failed.");
-            }
-          }}
-          className="w-full bg-red-950/20 text-red-500 border border-red-500 font-mono text-xs uppercase font-bold tracking-widest py-3 hover:bg-red-500 hover:text-black transition-colors"
-        >
-          Initiate Global Database Repair (Fix "Failed to load text")
-        </button>
+        <div className="space-y-4">
+          <button 
+            onClick={async () => {
+              if (!confirm("This will download the entire KJV Bible (31,102 verses) into the database. It may take 10-20 seconds.")) return;
+              try {
+                const res = await fetch("/api/admin/seed-full-bible", { headers: { Authorization: `Bearer ${token}` } });
+                const data = await res.json();
+                alert(data.message || data.error);
+              } catch (err) {
+                alert("Seed failed.");
+              }
+            }}
+            className="w-full bg-blue-950/20 text-blue-500 border border-blue-500 font-mono text-xs uppercase font-bold tracking-widest py-3 hover:bg-blue-500 hover:text-black transition-colors"
+          >
+            Seed Entire Bible (KJV)
+          </button>
+
+          <button 
+            onClick={async () => {
+              if (!confirm("This will repair all broken verses in the database by fetching from bible-api.com. It may take 30 seconds.")) return;
+              try {
+                const res = await fetch("/api/admin/repair", { headers: { Authorization: `Bearer ${token}` } });
+                const data = await res.json();
+                alert(data.message || data.error);
+              } catch (err) {
+                alert("Repair failed.");
+              }
+            }}
+            className="w-full bg-red-950/20 text-red-500 border border-red-500 font-mono text-xs uppercase font-bold tracking-widest py-3 hover:bg-red-500 hover:text-black transition-colors"
+          >
+            Initiate Global Database Repair (Fix "Failed to load text")
+          </button>
+        </div>
 
         {loading ? (
           <div className="text-center py-20 font-mono text-xs uppercase tracking-widest text-white/50">Loading data...</div>

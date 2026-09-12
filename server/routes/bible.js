@@ -1,5 +1,8 @@
-import express from 'express';
 
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 const router = express.Router();
 
 // Hardcoded book list with chapter counts for standard Protestant Bible
@@ -29,16 +32,29 @@ router.get('/chapter', async (req, res) => {
   if (!book || !chapter) return res.status(400).json({ error: 'Missing book or chapter' });
 
   try {
-    const response = await fetch(`https://bible-api.com/${encodeURIComponent(book + ' ' + chapter)}?translation=${translation}`);
-    if (!response.ok) throw new Error(`Bible API returned ${response.status}`);
+    let verses = await prisma.verse.findMany({
+      where: {
+        book: book,
+        chapter: parseInt(chapter),
+        version: \
+KJV\
+      },
+      orderBy: { verse: 'asc' }
+    });
+
+    if (verses.length > 0) {
+      res.json(verses.map(v => ({ verse: v.verse, text: v.text })));
+      return;
+    }
+
+    const response = await fetch(\https://bible-api.com/\?translation=\\);
+    if (!response.ok) throw new Error(\Bible API returned \\);
     const data = await response.json();
     
-    const verses = data.verses.map(v => ({
+    res.json(data.verses.map(v => ({
       verse: v.verse,
-      text: v.text.trim().replace(/\n/g, ' ')
-    }));
-    
-    res.json(verses);
+      text: v.text.trim().replace(/\\\n/g, ' ')
+    })));
   } catch (error) {
     console.error('Bible chapter fetch error:', error);
     res.status(500).json({ error: 'Failed to fetch chapter' });
@@ -52,16 +68,24 @@ router.get('/search', async (req, res) => {
   }
 
   try {
-    const response = await fetch(`https://bible-api.com/${encodeURIComponent(ref)}?translation=${translation}`);
+    const verse = await prisma.verse.findFirst({
+      where: { reference: ref, version: \KJV\ }
+    });
+    
+    if (verse) {
+      res.json({ reference: verse.reference, text: verse.text });
+      return;
+    }
+
+    const response = await fetch(\https://bible-api.com/\?translation=\\);
     if (!response.ok) {
-      throw new Error(`Bible API returned ${response.status}`);
+      throw new Error(\Bible API returned \\);
     }
     const data = await response.json();
     
-    // Format response
     res.json({
       reference: data.reference,
-      text: data.text.trim().replace(/\n/g, ' ')
+      text: data.text.trim().replace(/\\\n/g, ' ')
     });
   } catch (error) {
     console.error('Bible fetch error:', error);
@@ -70,3 +94,4 @@ router.get('/search', async (req, res) => {
 });
 
 export default router;
+

@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -34,7 +34,7 @@ model Device {
 
 model Verse {
   id        String   @id @default(uuid())
-  reference String   @unique // e.g. "Genesis 1:1"
+  reference String   // e.g. "Genesis 1:1"
   text      String
   book      String
   chapter   Int
@@ -43,6 +43,8 @@ model Verse {
   
   bookmarks Bookmark[]
   devices   Device[]
+
+  @@unique([reference, version])
 }
 
 model Bookmark {

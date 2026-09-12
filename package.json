@@ -7,7 +7,7 @@
     "dev": "vite",
     "server:dev": "node server/index.js",
     "build": "tsc -b && vite build",
-    "start": "node server/index.js",
+    "start": "npx prisma db push --accept-data-loss && node server/index.js",
     "lint": "oxlint",
     "preview": "vite preview"
   },

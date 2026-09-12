@@ -75,42 +75,58 @@ router.get("/seed-full-bible", async (req, res) => {
     if (existing > 1000) {
       return res.status(400).json({ error: "Bible already seeded!" });
     }
-
-    const response = await fetch("https://raw.githubusercontent.com/thiagobodruk/bible/master/json/en_kjv.json");
-    const books = await response.json();
-
-    let versesToInsert = [];
     
-    for (const book of books) {
-      const bookName = book.name;
-      for (let c = 0; c < book.chapters.length; c++) {
-        const chapterNum = c + 1;
-        for (let v = 0; v < book.chapters[c].length; v++) {
-          const verseNum = v + 1;
-          const text = book.chapters[c][v];
-          
-          versesToInsert.push({
-            reference: `${bookName} ${chapterNum}:${verseNum}`,
-            text,
-            book: bookName,
-            chapter: chapterNum,
-            verse: verseNum,
-            version: "KJV"
-          });
-          
-          if (versesToInsert.length >= 5000) {
-            await prisma.verse.createMany({ data: versesToInsert, skipDuplicates: true });
-            versesToInsert = [];
+    // Return immediately to prevent Railway 504 timeouts
+    res.json({ success: true, message: "Seed started in background! This will take about 60 seconds. You can safely close this alert." });
+
+    // Run in background
+    setTimeout(async () => {
+      try {
+        console.log("[SEED] Downloading KJV JSON...");
+        const response = await fetch("https://raw.githubusercontent.com/thiagobodruk/bible/master/json/en_kjv.json");
+        const books = await response.json();
+
+        let versesToInsert = [];
+        let total = 0;
+        
+        for (const book of books) {
+          const bookName = book.name;
+          for (let c = 0; c < book.chapters.length; c++) {
+            const chapterNum = c + 1;
+            for (let v = 0; v < book.chapters[c].length; v++) {
+              const verseNum = v + 1;
+              const text = book.chapters[c][v];
+              
+              versesToInsert.push({
+                reference: `${bookName} ${chapterNum}:${verseNum}`,
+                text: String(text),
+                book: String(bookName),
+                chapter: chapterNum,
+                verse: verseNum,
+                version: "KJV"
+              });
+              
+              // Reduce batch size to 500 to prevent Postgres parameter limits
+              if (versesToInsert.length >= 500) {
+                await prisma.verse.createMany({ data: versesToInsert, skipDuplicates: true });
+                total += versesToInsert.length;
+                console.log(`[SEED] Inserted ${total} verses...`);
+                versesToInsert = [];
+              }
+            }
           }
         }
+        
+        if (versesToInsert.length > 0) {
+          await prisma.verse.createMany({ data: versesToInsert, skipDuplicates: true });
+          total += versesToInsert.length;
+        }
+        console.log(`[SEED] SUCCESS! Inserted ${total} total verses.`);
+      } catch (err) {
+        console.error("[SEED] Background task failed:", err);
       }
-    }
-    
-    if (versesToInsert.length > 0) {
-      await prisma.verse.createMany({ data: versesToInsert, skipDuplicates: true });
-    }
+    }, 100);
 
-    res.json({ success: true, message: "Entire KJV Bible seeded successfully!" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Server error", details: error.message + "\n" + error.stack });

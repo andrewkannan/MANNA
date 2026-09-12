@@ -52,9 +52,9 @@ export default function Admin() {
               try {
                 const res = await fetch("/api/admin/seed-full-bible", { headers: { Authorization: `Bearer ${token}` } });
                 const data = await res.json();
-                alert(data.message || data.error);
+                alert(data.message || (data.error + ": " + data.details) || JSON.stringify(data));
               } catch (err) {
-                alert("Seed failed.");
+                alert("Seed failed: " + err);
               }
             }}
             className="w-full bg-blue-950/20 text-blue-500 border border-blue-500 font-mono text-xs uppercase font-bold tracking-widest py-3 hover:bg-blue-500 hover:text-black transition-colors"

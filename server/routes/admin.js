@@ -113,7 +113,7 @@ router.get("/seed-full-bible", async (req, res) => {
     res.json({ success: true, message: "Entire KJV Bible seeded successfully!" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.status(500).json({ error: "Server error", details: error.message + "\n" + error.stack });
   }
 });
 

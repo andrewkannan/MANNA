@@ -20,6 +20,11 @@ app.use(cors());
 app.use(express.json());
 
 // API Routes
+import authRoutes from './routes/auth.js';
+import devicesRoutes from './routes/devices.js';
+
+app.use('/api/auth', authRoutes);
+app.use('/api/devices', devicesRoutes);
 app.use('/api/display', displayRoutes);
 app.use('/api/bible', bibleRoutes);
 

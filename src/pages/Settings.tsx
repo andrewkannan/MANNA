@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Download, Upload, Bell, Wand2, BookOpen } from 'lucide-react';
+import { ChevronLeft, Download, Upload, Bell, Wand2, BookOpen, Monitor } from 'lucide-react';
 import { db } from '../db/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 
@@ -48,12 +48,39 @@ export default function Settings() {
               <Upload size={18} strokeWidth={2} />
               <span className="font-mono text-xs uppercase tracking-widest font-bold">Import Backup</span>
             </button>
+            <button 
+              onClick={() => {
+                localStorage.removeItem('manna_token');
+                navigate('/login');
+              }}
+              className="w-full p-4 flex items-center gap-4 hover:bg-white hover:text-black transition-colors text-red-500 font-mono text-xs uppercase tracking-widest font-bold border-t border-white/20"
+            >
+              <span className="font-mono text-xs uppercase tracking-widest font-bold">Terminate Session (Logout)</span>
+            </button>
           </div>
-          <p className="mt-3 text-[10px] font-mono uppercase tracking-widest text-white/40">Data is securely stored locally.</p>
+          <p className="mt-3 text-[10px] font-mono uppercase tracking-widest text-white/40">Data is securely synced to cloud.</p>
         </div>
 
         <div className="mb-10">
           <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Neural Engine</h2>
+          <div className="bg-[#111] border border-white/20 p-5 mb-4">
+            <div className="flex items-start gap-4 mb-4 text-white">
+              <Monitor size={18} strokeWidth={2} className="mt-0.5 text-red-500" />
+              <div className="w-full">
+                <p className="font-mono text-xs uppercase tracking-widest font-bold mb-2">Hardware Sync</p>
+                <p className="font-sans text-xs text-white/50 leading-relaxed mb-4">
+                  Manage paired T-Display-S3 hardware modules for external projection.
+                </p>
+                <button 
+                  onClick={() => navigate('/devices')}
+                  className="w-full bg-white text-black font-mono text-xs font-bold py-3 tracking-widest uppercase hover:bg-white/80 transition-colors"
+                >
+                  Manage Hardware
+                </button>
+              </div>
+            </div>
+          </div>
+          
           <div className="bg-[#111] border border-white/20 p-5 mb-4">
             <div className="flex items-start gap-4 mb-4 text-white">
               <BookOpen size={18} strokeWidth={2} className="mt-0.5 text-red-500" />

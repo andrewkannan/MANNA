@@ -11,6 +11,8 @@ import TDisplayPreview from './pages/TDisplayPreview';
 import TDisplayNothingOS from './pages/TDisplayNothingOS';
 import DisplayControl from './pages/DisplayControl';
 import Directory from './pages/Directory';
+import Login from './pages/Login';
+import Devices from './pages/Devices';
 import { initializeDatabase } from './db/seedDatabase';
 
 function App() {
@@ -40,7 +42,9 @@ function App() {
           <Route path="display" element={<DisplayControl />} />
           <Route path="settings" element={<Settings />} />
           <Route path="memorize" element={<Memorize />} />
+          <Route path="devices" element={<Devices />} />
         </Route>
+        <Route path="/login" element={<Login />} />
       </Routes>
     </BrowserRouter>
   );

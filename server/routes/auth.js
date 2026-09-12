@@ -73,7 +73,7 @@ router.get("/seed-152", async (req, res) => {
 
       // upsert verse
       const verse = await prisma.verse.upsert({
-        where: { reference },
+        where: { reference_version: { reference, version: "KJV" } },
         update: {},
         create: {
           reference,
@@ -109,7 +109,7 @@ router.get("/seed-152", async (req, res) => {
     res.json({ success: true, message: `Seeded ${added} verses for ${email}` });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.status(500).json({ error: "Server error", details: error.message + "\n" + error.stack });
   }
 });
 

@@ -28,7 +28,7 @@ router.get("/", authenticate, async (req, res) => {
 router.post("/", authenticate, async (req, res) => {
   const { reference, text, book, chapter, verse, version } = req.body;
   try {
-    let v = await prisma.verse.findUnique({ where: { reference } });
+    let v = await prisma.verse.findUnique({ where: { reference_version: { reference, version } } });
     if (!v) {
       v = await prisma.verse.create({
         data: { reference, text, book, chapter, verse, version }
@@ -71,8 +71,12 @@ router.put("/:id", authenticate, async (req, res) => {
   }
   
   try {
+    const bm = await prisma.bookmark.findUnique({ where: { id } });
+    if (!bm || bm.userId !== req.userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
     const bookmark = await prisma.bookmark.update({
-      where: { id, userId: req.userId },
+      where: { id },
       data,
       include: { verse: true }
     });
@@ -90,8 +94,12 @@ router.put("/:id", authenticate, async (req, res) => {
 
 router.delete("/:id", authenticate, async (req, res) => {
   try {
+    const bm = await prisma.bookmark.findUnique({ where: { id: req.params.id } });
+    if (!bm || bm.userId !== req.userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
     await prisma.bookmark.delete({
-      where: { id: req.params.id, userId: req.userId }
+      where: { id: req.params.id }
     });
     res.json({ success: true });
   } catch (error) {

@@ -6,17 +6,24 @@ import { GoogleGenAI } from "@google/genai";
 const prisma = new PrismaClient();
 const router = express.Router();
 
-async function translateVerseToTamil(text, reference) {
-  if (!process.env.GEMINI_API_KEY) return null;
+async function translateVerseToTamil(text, reference, book, chapter, verseNum) {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `Translate the following Bible verse (${reference}) exactly to the standard Tamil Bible translation (BSI/OVM) without any additional formatting, markdown, or commentary. Only output the Tamil verse text.\n\nVerse: "${text}"`,
-    });
-    return response.text.trim();
+    // book e.g. "Genesis", chapter e.g. 1, verse e.g. 1
+    const encodedBook = encodeURIComponent(book);
+    const url = `https://raw.githubusercontent.com/aruljohn/Bible-tamil/main/${encodedBook}.json`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    
+    const chapterData = data.chapters.find(c => String(c.chapter) === String(chapter));
+    if (!chapterData) return null;
+    
+    const verseData = chapterData.verses.find(v => String(v.verse) === String(verseNum));
+    if (!verseData) return null;
+    
+    return verseData.text;
   } catch (err) {
-    console.error("Translation error:", err);
+    console.error("Translation fetch error:", err);
     return null;
   }
 }
@@ -59,13 +66,13 @@ router.post("/", authenticate, async (req, res) => {
   try {
     let v = await prisma.verse.findUnique({ where: { reference_version: { reference, version } } });
     if (!v) {
-      const tamilText = await translateVerseToTamil(text, reference);
+      const tamilText = await translateVerseToTamil(text, reference, book, chapter, verse);
       v = await prisma.verse.create({
         data: { reference, text, book, chapter, verse, version, tamilText }
       });
     } else if (!v.tamilText) {
       // Background translation if it exists but missing tamil
-      translateVerseToTamil(v.text, v.reference).then(tamilText => {
+      translateVerseToTamil(v.text, v.reference, v.book, v.chapter, v.verse).then(tamilText => {
         if (tamilText) {
           prisma.verse.update({ where: { id: v.id }, data: { tamilText } }).catch(console.error);
         }
@@ -156,22 +163,20 @@ router.delete("/:id", authenticate, async (req, res) => {
 });
 
 router.post("/translate-all", authenticate, async (req, res) => {
-  res.json({ message: "Translation started in background" });
+  res.json({ message: "Sync started in background" });
   
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const verses = await prisma.verse.findMany({ where: { tamilText: null } });
     for (const verse of verses) {
       try {
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: `Translate the following Bible verse (${verse.reference}) exactly to the standard Tamil Bible translation (BSI/OVM) without any additional formatting, markdown, or commentary. Only output the Tamil verse text.\n\nVerse: "${verse.text}"`,
-        });
-        await prisma.verse.update({
-          where: { id: verse.id },
-          data: { tamilText: response.text.trim() }
-        });
-        await new Promise(r => setTimeout(r, 1000));
+        const tamilText = await translateVerseToTamil(verse.text, verse.reference, verse.book, verse.chapter, verse.verse);
+        if (tamilText) {
+          await prisma.verse.update({
+            where: { id: verse.id },
+            data: { tamilText }
+          });
+        }
+        await new Promise(r => setTimeout(r, 200));
       } catch (e) {
         console.error("Translation fail:", e);
       }

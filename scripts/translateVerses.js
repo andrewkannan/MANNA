@@ -1,45 +1,44 @@
 import { PrismaClient } from '@prisma/client';
-import { GoogleGenAI } from '@google/genai';
-import dotenv from 'dotenv';
-dotenv.config();
 
 const prisma = new PrismaClient();
 
 async function run() {
-  if (!process.env.GEMINI_API_KEY) {
-    console.error("No GEMINI_API_KEY in .env");
-    process.exit(1);
-  }
-
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const verses = await prisma.verse.findMany({
     where: { tamilText: null }
   });
 
-  console.log(`Found ${verses.length} verses missing Tamil translation.`);
+  console.log(`Found ${verses.length} verses missing Tamil text.`);
 
   for (const verse of verses) {
-    console.log(`Translating ${verse.reference}...`);
+    console.log(`Fetching ${verse.reference}...`);
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: `Translate the following Bible verse (${verse.reference}) exactly to the standard Tamil Bible translation (BSI/OVM) without any additional formatting, markdown, or commentary. Only output the Tamil verse text.\n\nVerse: "${verse.text}"`,
-      });
-      const tamilText = response.text.trim();
+      const encodedBook = encodeURIComponent(verse.book);
+      const url = `https://raw.githubusercontent.com/aruljohn/Bible-tamil/main/${encodedBook}.json`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Failed to fetch JSON for ${verse.book}`);
+      
+      const data = await res.json();
+      const chapterData = data.chapters.find((c: any) => String(c.chapter) === String(verse.chapter));
+      if (!chapterData) throw new Error("Chapter not found");
+      
+      const verseData = chapterData.verses.find((v: any) => String(v.verse) === String(verse.verse));
+      if (!verseData) throw new Error("Verse not found");
+      
+      const tamilText = verseData.text;
       
       await prisma.verse.update({
         where: { id: verse.id },
         data: { tamilText }
       });
       console.log(`  -> Success.`);
-      // Add a small delay to avoid rate limits
-      await new Promise(r => setTimeout(r, 1000));
-    } catch (err) {
-      console.error(`  -> Failed:`, err);
+      
+      await new Promise(r => setTimeout(r, 200));
+    } catch (err: any) {
+      console.error(`  -> Failed: ${err.message}`);
     }
   }
 
-  console.log("Translation complete!");
+  console.log("Sync complete!");
   process.exit(0);
 }
 

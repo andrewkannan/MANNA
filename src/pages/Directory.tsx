@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '../db/db';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ChevronLeft, Folder, Loader2, Plus, Minus } from 'lucide-react';
+import { ChevronLeft, Folder, Loader2, Plus, Minus, Search, X } from 'lucide-react';
 
 interface Book {
   name: string;
@@ -11,6 +11,9 @@ interface Book {
 interface ChapterVerse {
   verse: number;
   text: string;
+  reference?: string;
+  book?: string;
+  chapter?: number;
 }
 
 import { useData } from '../store/useData';
@@ -22,6 +25,10 @@ export default function Directory() {
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
   const [verses, setVerses] = useState<ChapterVerse[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ChapterVerse[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const { bookmarks, addBookmark, deleteBookmark } = useData();
   const libraryRefs = new Map(bookmarks.map(b => [b.verse.reference, b.id]));
@@ -33,6 +40,26 @@ export default function Directory() {
       .then(res => res.json())
       .then(data => setBooks(data));
   }, []);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const delay = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(`/api/bible/search-text?q=${encodeURIComponent(searchQuery)}`);
+        const data = await res.json();
+        setSearchResults(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500);
+    return () => clearTimeout(delay);
+  }, [searchQuery]);
 
   const loadChapter = async (book: string, chapter: number) => {
     setLoading(true);
@@ -54,14 +81,16 @@ export default function Directory() {
     if (bookmarkId) {
       await deleteBookmark(bookmarkId);
     } else {
-      const reference = `${selectedBook} ${selectedChapter}:${v.verse}`;
+      const book = v.book || selectedBook!;
+      const chapter = v.chapter || selectedChapter!;
+      const reference = v.reference || `${book} ${chapter}:${v.verse}`;
       await addBookmark({
         reference,
         text: v.text,
-        book: selectedBook!,
-        chapter: selectedChapter!,
+        book,
+        chapter,
         verse: v.verse,
-        version: (appState?.preferredVersion || 'web').toUpperCase()
+        version: "KJV"
       });
     }
   };
@@ -77,24 +106,70 @@ export default function Directory() {
 
   return (
     <div className="min-h-full pb-24 bg-black text-white font-sans">
-      <header className="px-6 pt-12 pb-4 sticky top-0 bg-black/90 backdrop-blur-md z-30 border-b border-white/10 flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            {selectedBook && (
-              <button onClick={goBack} className="text-white/50 hover:text-white transition-colors">
-                <ChevronLeft size={20} />
+      <header className="px-6 pt-12 pb-4 sticky top-0 bg-black/90 backdrop-blur-md z-30 border-b border-white/10 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              {selectedBook && (
+                <button onClick={goBack} className="text-white/50 hover:text-white transition-colors">
+                  <ChevronLeft size={20} />
+                </button>
+              )}
+              <p className="font-mono text-red-500 text-[10px] tracking-[0.2em] uppercase font-bold">Data Core</p>
+            </div>
+            <h1 className="text-3xl font-black tracking-tighter">
+              {selectedChapter ? `${selectedBook} ${selectedChapter}` : selectedBook ? selectedBook : 'DIRECTORY'}
+            </h1>
+          </div>
+        </div>
+
+        {!selectedBook && (
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" size={16} strokeWidth={2} />
+            <input 
+              type="text" 
+              placeholder="GLOBAL SEARCH (KJV)..." 
+              className="w-full bg-[#111] border border-white/20 rounded-xl py-3 pl-12 pr-10 focus:outline-none focus:border-red-600 font-mono text-xs tracking-widest uppercase placeholder:text-white/30 transition-colors"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white">
+                <X size={16} />
               </button>
             )}
-            <p className="font-mono text-red-500 text-[10px] tracking-[0.2em] uppercase font-bold">Data Core</p>
           </div>
-          <h1 className="text-3xl font-black tracking-tighter">
-            {selectedChapter ? `${selectedBook} ${selectedChapter}` : selectedBook ? selectedBook : 'DIRECTORY'}
-          </h1>
-        </div>
+        )}
       </header>
 
       <main className="px-6 py-6">
-        {!selectedBook && (
+        {!selectedBook && searchQuery ? (
+          <div className="space-y-4">
+            {isSearching ? (
+              <div className="text-center py-10 font-mono text-xs uppercase tracking-widest text-white/50">Searching...</div>
+            ) : searchResults.length === 0 ? (
+              <div className="text-center py-10 font-mono text-xs uppercase tracking-widest text-white/50">No results found</div>
+            ) : (
+              searchResults.map((v) => {
+                const ref = v.reference!;
+                const bookmarkId = libraryRefs.get(ref);
+                const isAdded = !!bookmarkId;
+                const isRedLetter = redLetterVerses.has(ref);
+                
+                return (
+                  <div 
+                    key={ref} 
+                    onDoubleClick={() => toggleVerse(v, bookmarkId)}
+                    className={`p-4 border select-none transition-colors ${isAdded ? 'border-red-500 bg-red-950/20' : 'border-white/20 bg-[#111]'} flex flex-col gap-2 relative overflow-hidden`}
+                  >
+                    <div className="font-mono font-bold text-red-500 text-xs tracking-widest">{ref}</div>
+                    <p className={`font-sans text-sm leading-relaxed ${isRedLetter ? 'text-red-500 font-bold' : (isAdded ? 'text-white font-bold' : 'text-white/90')}`}>{v.text}</p>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        ) : !selectedBook ? (
           <div className="space-y-8">
             <div>
               <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Old Testament</h2>

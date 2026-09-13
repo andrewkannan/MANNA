@@ -35,4 +35,37 @@ router.get('/search', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch from Bible API' });
   }
 });
+router.get('/search-text', async (req, res) => {
+  const { q } = req.query;
+  if (!q || typeof q !== 'string') {
+    return res.status(400).json({ error: 'Missing search query' });
+  }
+
+  try {
+    const verses = await prisma.verse.findMany({
+      where: {
+        version: "KJV",
+        text: { contains: q, mode: 'insensitive' }
+      },
+      take: 50, // limit to 50 results so we don't crash the client
+      orderBy: [
+        { book: 'asc' },
+        { chapter: 'asc' },
+        { verse: 'asc' }
+      ]
+    });
+    
+    res.json(verses.map(v => ({
+      reference: v.reference,
+      text: v.text,
+      book: v.book,
+      chapter: v.chapter,
+      verse: v.verse
+    })));
+  } catch (error) {
+    console.error('Text search error:', error);
+    res.status(500).json({ error: 'Failed to search verses' });
+  }
+});
+
 export default router;

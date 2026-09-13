@@ -34,12 +34,19 @@ export default function Home() {
     new: bookmarks?.filter(v => v.status === 'NEW').length || 0,
   };
 
+  const user = useAuth(state => state.user);
+  const username = user?.email 
+    ? user.email.split('@')[0].replace(/[0-9]/g, '').toUpperCase() 
+    : 'OPERATIVE';
+
   return (
     <PageWrapper className="min-h-full pb-24 bg-black text-white font-sans">
-      <header className="px-6 pt-12 pb-6 flex justify-between items-start sticky top-0 bg-black/90 backdrop-blur-md z-10 border-b border-white/10">
+      <header className="px-6 pt-12 pb-6 flex justify-between items-start sticky top-0 bg-black/90 backdrop-blur-md z-40 border-b border-white/10">
         <div>
-          <p className="font-mono text-red-600 text-xs font-bold uppercase tracking-[0.2em] mb-1">System</p>
-          <h1 className="text-4xl font-sans font-bold tracking-tighter">DASHBOARD</h1>
+          <p className="font-mono text-red-600 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">
+            PROTOCOL ACTIVE // {username}
+          </p>
+          <h1 className="text-4xl font-sans font-black tracking-tighter">DASHBOARD</h1>
         </div>
         <button onClick={() => navigate('/settings')} className="p-2 text-white/50 hover:text-white transition-colors">
           <SettingsIcon size={24} strokeWidth={1.5} />

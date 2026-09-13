@@ -143,7 +143,7 @@ export default function Directory() {
       </header>
 
       <main className="px-6 py-6">
-        {!selectedBook && searchQuery ? (
+        {!selectedBook && searchQuery && (
           <div className="space-y-4">
             {isSearching ? (
               <div className="text-center py-10 font-mono text-xs uppercase tracking-widest text-white/50">Searching...</div>
@@ -169,7 +169,7 @@ export default function Directory() {
               })
             )}
           </div>
-        ) : !selectedBook ? (
+        )} {!selectedBook && !searchQuery && (
           <div className="space-y-8">
             <div>
               <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Old Testament</h2>

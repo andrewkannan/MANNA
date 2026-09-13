@@ -4,7 +4,6 @@ import AppLayout from './components/layout/AppLayout';
 import Home from './pages/Home';
 import Bookmarks from './pages/Bookmarks';
 import VerseDetail from './pages/VerseDetail';
-import Progress from './pages/Progress';
 import Settings from './pages/Settings';
 import Memorize from './pages/Memorize';
 import TDisplayPreview from './pages/TDisplayPreview';
@@ -61,7 +60,6 @@ function App() {
               <Route path="directory" element={<Directory />} />
               <Route path="bookmarks" element={<Bookmarks />} />
               <Route path="verse/:id" element={<VerseDetail />} />
-              <Route path="progress" element={<Progress />} />
               <Route path="display" element={<DisplayControl />} />
               <Route path="settings" element={<Settings />} />
               <Route path="memorize" element={<Memorize />} />

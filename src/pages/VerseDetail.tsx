@@ -47,6 +47,37 @@ export default function VerseDetail() {
 
         <div className="space-y-6">
           <div className="bg-[#111] p-5 border border-white/20">
+            <h3 className="font-mono text-[10px] tracking-[0.2em] uppercase font-bold text-red-500 mb-3">Tags / Themes</h3>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {(bookmark.themes as unknown as string[] || []).map(tag => (
+                <div key={tag} className="bg-white/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2 border border-white/20">
+                  {tag}
+                  <button onClick={() => {
+                    const newThemes = (bookmark.themes as unknown as string[]).filter(t => t !== tag);
+                    handleUpdate('themes', newThemes);
+                  }} className="text-white/50 hover:text-red-500">
+                    &times;
+                  </button>
+                </div>
+              ))}
+            </div>
+            <input 
+              type="text" 
+              placeholder="ADD TAG + ENTER" 
+              className="w-full bg-black border border-white/20 p-3 font-mono text-[10px] uppercase tracking-widest focus:outline-none focus:border-red-500"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const val = e.currentTarget.value.trim().toUpperCase();
+                  if (val && !(bookmark.themes as unknown as string[] || []).includes(val)) {
+                    handleUpdate('themes', [...(bookmark.themes as unknown as string[] || []), val]);
+                    e.currentTarget.value = '';
+                  }
+                }
+              }}
+            />
+          </div>
+
+          <div className="bg-[#111] p-5 border border-white/20">
              <EditableSection
               title="Tamil Explanation"
               value={bookmark.tamilExplanation || ''}

@@ -11,10 +11,18 @@ export default function Bookmarks() {
   const [isLoading, setIsLoading] = useState(false);
   
   const { bookmarks, addBookmark } = useData();
-  const verses = bookmarks.filter(b => 
-    b.verse.reference.toLowerCase().includes(search.toLowerCase()) || 
-    b.verse.text.toLowerCase().includes(search.toLowerCase())
-  );
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  const allTags = Array.from(new Set(
+    bookmarks.flatMap(b => (b.themes as unknown as string[]) || [])
+  )).sort();
+
+  const verses = bookmarks.filter(b => {
+    const matchesSearch = b.verse.reference.toLowerCase().includes(search.toLowerCase()) || 
+                          b.verse.text.toLowerCase().includes(search.toLowerCase());
+    const matchesTag = selectedTag ? ((b.themes as unknown as string[]) || []).includes(selectedTag) : true;
+    return matchesSearch && matchesTag;
+  });
 
   const handleDownloadVerse = async () => {
     if (!newRef.trim()) return;
@@ -59,6 +67,26 @@ export default function Bookmarks() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+
+        {allTags.length > 0 && (
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <button 
+              onClick={() => setSelectedTag(null)}
+              className={`whitespace-nowrap px-4 py-1.5 font-mono text-[10px] uppercase tracking-widest border rounded-full transition-colors ${!selectedTag ? 'bg-white text-black border-white' : 'bg-transparent text-white/50 border-white/20 hover:border-white/50'}`}
+            >
+              ALL
+            </button>
+            {allTags.map(tag => (
+              <button 
+                key={tag}
+                onClick={() => setSelectedTag(tag)}
+                className={`whitespace-nowrap px-4 py-1.5 font-mono text-[10px] uppercase tracking-widest border rounded-full transition-colors ${selectedTag === tag ? 'bg-red-600 text-white border-red-600' : 'bg-transparent text-white/50 border-white/20 hover:border-white/50'}`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       <main className="px-6 py-6">

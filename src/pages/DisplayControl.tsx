@@ -193,9 +193,10 @@ export default function DisplayControl() {
           />
         </div>
 
-        <div className="space-y-3 h-[300px] overflow-y-auto pr-2 pb-10">
+        <div className="space-y-3 pb-10">
           {filteredBookmarks.map((bookmark) => (
-            <div 
+            <motion.div 
+              whileTap={{ scale: 0.98 }}
               key={bookmark.id} 
               onClick={() => handleSetDisplay(bookmark.verse.id)}
               className={`p-4 border rounded-xl cursor-pointer transition-all ${
@@ -206,7 +207,7 @@ export default function DisplayControl() {
             >
               <h3 className="font-mono text-[10px] text-red-500 font-bold tracking-[0.2em] uppercase mb-1">{bookmark.verse.reference}</h3>
               <p className="text-white/80 font-sans text-xs line-clamp-1">{bookmark.verse.text}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
 

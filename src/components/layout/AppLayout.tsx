@@ -15,10 +15,10 @@ export default function AppLayout() {
   }, [isDarkMode]);
 
   const navClass = ({ isActive }: { isActive: boolean }) =>
-    `flex flex-col items-center justify-center w-full h-full border-r border-white/20 last:border-r-0 transition-colors ${
+    `flex flex-col items-center justify-center w-full h-full border-r border-white/20 last:border-r-0 transition-colors select-none ${
       isActive 
         ? 'bg-white text-black' 
-        : 'text-white/40 hover:bg-white/10 hover:text-white'
+        : 'text-white/40 active:bg-white/10 active:text-white'
     }`;
 
   return (

@@ -25,6 +25,7 @@
   }
   * {
     scrollbar-width: none;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 

@@ -1,19 +1,93 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { calculateNextReview } from '../utils/srs';
 import NothingCard from '../components/ArtCard';
-import { BrainCircuit, Check, X, RotateCw } from 'lucide-react';
+import { BrainCircuit, Check, X, RotateCw, Mic, MicOff } from 'lucide-react';
 import { useData } from '../store/useData';
+import * as diff from 'diff';
+
+// Extend window for webkitSpeechRecognition
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
 
 export default function Memorize() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  
+  // Speech Recognition State
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [diffResult, setDiffResult] = useState<diff.Change[]>([]);
+  const recognitionRef = useRef<any>(null);
 
   const { bookmarks, updateBookmark } = useData();
   const activeBookmarks = bookmarks.filter(b => b.dueDate <= Date.now() || b.status === 'NEW');
 
   useEffect(() => {
     setIsFlipped(false);
+    setTranscript('');
+    setDiffResult([]);
+    setIsListening(false);
   }, [currentIndex]);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      
+      recognitionRef.current.onresult = (event: any) => {
+        let currentTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          currentTranscript += event.results[i][0].transcript;
+        }
+        setTranscript(prev => prev + ' ' + currentTranscript);
+      };
+      
+      recognitionRef.current.onerror = (event: any) => {
+        console.error("Speech recognition error", event.error);
+        setIsListening(false);
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+    
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      compareTranscript();
+    } else {
+      setTranscript('');
+      setDiffResult([]);
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
+
+  const compareTranscript = () => {
+    if (!activeBookmarks[currentIndex]) return;
+    const targetText = activeBookmarks[currentIndex].verse.text;
+    
+    const clean = (s: string) => s.replace(/[^a-z0-9\s]/gi, '').toLowerCase().replace(/\s+/g, ' ').trim();
+    
+    const changes = diff.diffWords(clean(targetText), clean(transcript));
+    setDiffResult(changes);
+    setIsFlipped(true); // Auto-flip to show result!
+  };
 
   if (activeBookmarks.length === 0) {
     return (
@@ -37,8 +111,6 @@ export default function Memorize() {
 
     const updates = calculateNextReview(currentBookmark, result);
     await updateBookmark(currentBookmark.id, updates);
-    
-    // Streaks logic could be moved to backend/user model in the future
     
     if (currentIndex < activeBookmarks.length - 1) {
       setCurrentIndex(prev => prev + 1);
@@ -68,6 +140,40 @@ export default function Memorize() {
           isFlipped={isFlipped}
           onClick={() => setIsFlipped(!isFlipped)}
         />
+        
+        {!isFlipped && (
+          <div className="mt-8 flex flex-col items-center">
+            {recognitionRef.current ? (
+              <button 
+                onClick={toggleListening}
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${isListening ? 'bg-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.5)] animate-pulse' : 'bg-[#111] text-white border border-white/20 hover:border-white'}`}
+              >
+                {isListening ? <MicOff size={24} /> : <Mic size={24} />}
+              </button>
+            ) : (
+              <p className="text-xs text-white/50 font-mono text-center">Speech Recognition not supported in this browser.</p>
+            )}
+            
+            {transcript && !isFlipped && (
+              <p className="mt-6 text-sm font-sans text-center text-white/70 px-4">
+                "{transcript}..."
+              </p>
+            )}
+          </div>
+        )}
+
+        {isFlipped && diffResult.length > 0 && (
+          <div className="mt-8 p-4 bg-[#111] border border-white/20">
+            <h4 className="font-mono text-red-500 text-[10px] uppercase tracking-widest font-bold mb-3">Speech Analysis</h4>
+            <div className="font-sans text-lg leading-relaxed">
+              {diffResult.map((part, i) => {
+                if (part.added) return <span key={i} className="text-white/30 line-through decoration-red-500">{part.value}</span>;
+                if (part.removed) return <span key={i} className="text-red-500 font-bold border-b border-red-500">{part.value}</span>;
+                return <span key={i} className="text-white">{part.value}</span>;
+              })}
+            </div>
+          </div>
+        )}
 
         <div className={`mt-8 transition-all duration-300 ${isFlipped ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
           <p className="text-center font-mono text-white/50 text-[10px] tracking-[0.2em] uppercase mb-4 font-bold">Assess Accuracy</p>

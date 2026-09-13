@@ -75,6 +75,7 @@ model Bookmark {
   lastReviewed     BigInt?
   difficulty       Float    @default(1.0)
   streak           Int      @default(0)
+  lastDisplayedAt  BigInt?  // Used for hardware queue sequence
   
   tamilExplanation String?
   personalNotes    String?

@@ -24,6 +24,22 @@ export default function VerseDetail() {
     }
   };
 
+  const playAudio = (text: string, lang: 'en-US' | 'ta-IN') => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.rate = lang === 'ta-IN' ? 0.8 : 0.9;
+      
+      // Try to find a specific voice for the language
+      const voices = window.speechSynthesis.getVoices();
+      const voice = voices.find(v => v.lang.includes(lang.split('-')[0]));
+      if (voice) utterance.voice = voice;
+      
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   return (
     <PageWrapper className="min-h-full pb-10 bg-black text-white font-sans">
       <header className="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center justify-between z-30">
@@ -31,23 +47,21 @@ export default function VerseDetail() {
           <ChevronLeft size={28} strokeWidth={2} className="-ml-2" />
         </button>
         <div className="font-mono text-[10px] uppercase font-bold tracking-[0.2em] text-white">{verse.reference}</div>
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <button 
-            onClick={() => {
-              if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(verse.text);
-                utterance.rate = 0.9;
-                window.speechSynthesis.cancel();
-                window.speechSynthesis.speak(utterance);
-              }
-            }}
-            className="text-white/50 hover:text-white transition-colors"
+            onClick={() => playAudio(verse.text, 'en-US')}
+            className="flex items-center gap-1 bg-[#111] border border-white/20 px-2 py-1 font-mono text-[8px] uppercase tracking-widest hover:bg-white hover:text-black transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+            ENG
           </button>
-          <button className="text-white/50 hover:text-white transition-colors">
-            <Edit2 size={18} strokeWidth={2} />
-          </button>
+          {bookmark.tamilExplanation && (
+            <button 
+              onClick={() => playAudio(bookmark.tamilExplanation || '', 'ta-IN')}
+              className="flex items-center gap-1 bg-[#111] border border-white/20 px-2 py-1 font-mono text-[8px] uppercase tracking-widest hover:bg-white hover:text-black transition-colors text-red-500"
+            >
+              TAMIL
+            </button>
+          )}
         </div>
       </header>
 

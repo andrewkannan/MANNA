@@ -1,6 +1,7 @@
 import { PageWrapper } from '../components/animations/PageWrapper';
 import { useState, useEffect } from 'react';
 import { Monitor, Search } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useData } from '../store/useData';
 import { useAuth } from '../store/useAuth';
 

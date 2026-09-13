@@ -27,6 +27,38 @@ export default defineConfig({
             type: 'image/png'
           }
         ]
+      },
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: /^\/api\/bible\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'bible-cache',
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /^\/api\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
       }
     })
   ],

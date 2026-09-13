@@ -3,6 +3,9 @@ import { Search, Plus, CloudDownload, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useData } from '../store/useData';
 import { redLetterVerses } from '../utils/redLetters';
+import { PageWrapper } from '../components/animations/PageWrapper';
+import { StaggerList } from '../components/animations/StaggerList';
+import { motion } from 'framer-motion';
 
 export default function Bookmarks() {
   const [search, setSearch] = useState('');
@@ -53,7 +56,7 @@ export default function Bookmarks() {
   };
 
   return (
-    <div className="min-h-full pb-24 bg-black text-white">
+    <PageWrapper className="pb-24 bg-black text-white">
       <header className="px-6 pt-12 pb-4 sticky top-0 bg-black/90 backdrop-blur-md z-10 border-b border-white/10">
         <h1 className="text-4xl font-sans font-black tracking-tighter mb-6">BOOKMARKS</h1>
         
@@ -91,7 +94,11 @@ export default function Bookmarks() {
 
       <main className="px-6 py-6">
         {showAdd && (
-          <div className="bg-[#111] border border-white/20 rounded-xl p-5 mb-6 shadow-[4px_4px_0px_0px_rgba(255,0,0,0.5)]">
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-[#111] border border-white/20 rounded-xl p-5 mb-6 shadow-[4px_4px_0px_0px_rgba(255,0,0,0.5)]"
+          >
             <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] mb-3 text-red-500">Download from Cloud</h3>
             <div className="flex gap-2">
               <input 
@@ -109,31 +116,34 @@ export default function Bookmarks() {
                 {isLoading ? <Loader2 className="animate-spin" size={20} /> : <CloudDownload size={20} />}
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
 
-        <div className="space-y-4">
+        <StaggerList className="space-y-4">
           {verses?.map((bookmark) => {
             const isRedLetter = redLetterVerses.has(bookmark.verse.reference);
             return (
-              <Link key={bookmark.id} to={`/verse/${bookmark.id}`} className="block group">
-                <div className="p-5 bg-transparent border border-white/20 rounded-xl group-hover:border-red-600 group-hover:bg-[#111] transition-all">
-                  <h3 className="font-mono text-[10px] font-bold text-red-500 tracking-[0.2em] uppercase mb-2">{bookmark.verse.reference}</h3>
-                  <p className={`font-sans text-sm leading-snug line-clamp-2 ${isRedLetter ? 'text-red-500 font-bold' : 'text-white/80'}`}>{bookmark.verse.text}</p>
-                </div>
-              </Link>
+              <div key={bookmark.id}>
+                <Link to={`/verse/${bookmark.id}`} className="block group">
+                  <div className="p-5 bg-transparent border border-white/20 rounded-xl group-hover:border-red-600 group-hover:bg-[#111] transition-all">
+                    <h3 className="font-mono text-[10px] font-bold text-red-500 tracking-[0.2em] uppercase mb-2">{bookmark.verse.reference}</h3>
+                    <p className={`font-sans text-sm leading-snug line-clamp-2 ${isRedLetter ? 'text-red-500 font-bold' : 'text-white/80'}`}>{bookmark.verse.text}</p>
+                  </div>
+                </Link>
+              </div>
             );
           })}
-        </div>
+        </StaggerList>
       </main>
 
       {/* Floating Action Button */}
-      <button 
+      <motion.button 
+        whileTap={{ scale: 0.9 }}
         onClick={() => setShowAdd(!showAdd)}
-        className="fixed bottom-24 right-6 w-14 h-14 bg-white text-black rounded-full shadow-[4px_4px_0px_0px_rgba(255,0,0,1)] flex items-center justify-center active:translate-y-1 active:translate-x-1 active:shadow-none transition-all z-40"
+        className="fixed bottom-24 right-6 w-14 h-14 bg-white text-black rounded-full shadow-[4px_4px_0px_0px_rgba(255,0,0,1)] flex items-center justify-center transition-all z-40"
       >
         <Plus size={28} strokeWidth={2.5} className={`transition-transform ${showAdd ? 'rotate-45' : ''}`} />
-      </button>
-    </div>
+      </motion.button>
+    </PageWrapper>
   );
 }

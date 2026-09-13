@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { calculateNextReview } from '../utils/srs';
+import { PageWrapper } from '../components/animations/PageWrapper';
 import NothingCard from '../components/ArtCard';
 import { BrainCircuit, Check, X, RotateCw, Mic, MicOff } from 'lucide-react';
 import { useData } from '../store/useData';
@@ -118,7 +119,7 @@ export default function Memorize() {
   };
 
   return (
-    <div className="min-h-full bg-black text-white flex flex-col pb-24">
+    <PageWrapper className="flex flex-col pb-24 bg-black text-white min-h-full">
       <header className="px-6 pt-12 pb-4 flex justify-between items-center border-b border-white/10 sticky top-0 bg-black/90 backdrop-blur-md z-30">
         <div>
           <h1 className="text-3xl font-sans font-black tracking-tighter">RECALL</h1>
@@ -213,6 +214,6 @@ export default function Memorize() {
           </div>
         </div>
       </main>
-    </div>
+    </PageWrapper>
   );
 }

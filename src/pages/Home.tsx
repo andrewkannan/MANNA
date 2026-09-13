@@ -1,3 +1,4 @@
+import { PageWrapper } from '../components/animations/PageWrapper';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { useNavigate } from 'react-router-dom';
@@ -20,7 +21,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-full pb-24 bg-black text-white">
+    <PageWrapper className="min-h-full pb-24 bg-black text-white">
       <header className="px-6 pt-12 pb-6 flex justify-between items-start">
         <div>
           <p className="font-mono text-red-600 text-xs font-bold uppercase tracking-[0.2em] mb-1">System</p>
@@ -70,6 +71,6 @@ export default function Home() {
           </div>
         </div>
       </main>
-    </div>
+    </PageWrapper>
   );
 }

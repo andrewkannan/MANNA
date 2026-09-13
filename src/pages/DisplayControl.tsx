@@ -1,3 +1,4 @@
+import { PageWrapper } from '../components/animations/PageWrapper';
 import { useState, useEffect } from 'react';
 import { Monitor, Search } from 'lucide-react';
 import { useData } from '../store/useData';
@@ -72,7 +73,7 @@ export default function DisplayControl() {
   };
 
   return (
-    <div className="min-h-full pb-24 bg-black text-white">
+    <PageWrapper className="min-h-full pb-24 bg-black text-white">
       <header className="px-6 pt-12 pb-6 border-b border-white/10">
         <h1 className="text-4xl font-sans font-black tracking-tighter">DISPLAY</h1>
         <p className="font-mono text-red-600 text-[10px] tracking-[0.2em] uppercase mt-1 font-bold">Hardware Sync</p>
@@ -210,6 +211,6 @@ export default function DisplayControl() {
         </div>
 
       </main>
-    </div>
+    </PageWrapper>
   );
 }

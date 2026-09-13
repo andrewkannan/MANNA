@@ -1,3 +1,4 @@
+import { PageWrapper } from '../components/animations/PageWrapper';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Edit2 } from 'lucide-react';
 import EditableSection from '../components/EditableSection';
@@ -24,7 +25,7 @@ export default function VerseDetail() {
   };
 
   return (
-    <div className="min-h-full pb-10 bg-black text-white font-sans">
+    <PageWrapper className="min-h-full pb-10 bg-black text-white font-sans">
       <header className="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center justify-between z-30">
         <button onClick={() => navigate(-1)} className="flex items-center text-white hover:text-red-500 transition-colors">
           <ChevronLeft size={28} strokeWidth={2} className="-ml-2" />
@@ -118,6 +119,6 @@ export default function VerseDetail() {
           INITIATE RECALL
         </button>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

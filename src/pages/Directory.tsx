@@ -18,6 +18,10 @@ interface ChapterVerse {
 
 import { useData } from '../store/useData';
 import { redLetterVerses } from '../utils/redLetters';
+import { PageWrapper } from '../components/animations/PageWrapper';
+import { StaggerList } from '../components/animations/StaggerList';
+import { Marquee } from '../components/animations/Marquee';
+import { motion } from 'framer-motion';
 
 export default function Directory() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -105,9 +109,10 @@ export default function Directory() {
   };
 
   return (
-    <div className="min-h-full pb-24 bg-black text-white font-sans">
+    <PageWrapper className="pb-24 bg-black text-white font-sans">
       <header className="px-6 pt-12 pb-4 sticky top-0 bg-black/90 backdrop-blur-md z-30 border-b border-white/10 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+        {!selectedBook && <Marquee text="MANNA OS // MEMORY PROTOCOL ACTIVE // DIRECTORY ONLINE //" className="absolute top-0 left-0 right-0 w-full" />}
+        <div className={`flex items-center justify-between ${!selectedBook ? 'mt-4' : ''}`}>
           <div>
             <div className="flex items-center gap-2 mb-1">
               {selectedBook && (
@@ -169,40 +174,42 @@ export default function Directory() {
               })
             )}
           </div>
-        )} {!selectedBook && !searchQuery && (
+        )}        {!selectedBook && !searchQuery && (
           <div className="space-y-8">
             <div>
               <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Old Testament</h2>
-              <div className="grid grid-cols-2 gap-3">
+              <StaggerList className="grid grid-cols-2 gap-3">
                 {books.slice(0, 39).map(b => (
-                  <button 
+                  <motion.button 
+                    whileTap={{ scale: 0.95 }}
                     key={b.name} 
                     onClick={() => setSelectedBook(b.name)}
-                    className="bg-[#111] border border-white/10 p-4 text-left hover:border-red-500 transition-colors group relative overflow-hidden"
+                    className="bg-[#111] border border-white/10 p-4 text-left hover:border-red-500 transition-colors group relative overflow-hidden block w-full"
                   >
                     <Folder size={16} className="text-white/30 mb-3 group-hover:text-red-500 transition-colors" />
                     <h3 className="font-mono text-xs font-bold uppercase tracking-widest truncate">{b.name}</h3>
                     <p className="text-[10px] text-white/50 font-mono">{b.chapters} CH</p>
-                  </button>
+                  </motion.button>
                 ))}
-              </div>
+              </StaggerList>
             </div>
             
             <div>
               <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">New Testament</h2>
-              <div className="grid grid-cols-2 gap-3">
+              <StaggerList className="grid grid-cols-2 gap-3">
                 {books.slice(39).map(b => (
-                  <button 
+                  <motion.button 
+                    whileTap={{ scale: 0.95 }}
                     key={b.name} 
                     onClick={() => setSelectedBook(b.name)}
-                    className="bg-[#111] border border-white/10 p-4 text-left hover:border-red-500 transition-colors group relative overflow-hidden"
+                    className="bg-[#111] border border-white/10 p-4 text-left hover:border-red-500 transition-colors group relative overflow-hidden block w-full"
                   >
                     <Folder size={16} className="text-white/30 mb-3 group-hover:text-red-500 transition-colors" />
                     <h3 className="font-mono text-xs font-bold uppercase tracking-widest truncate">{b.name}</h3>
                     <p className="text-[10px] text-white/50 font-mono">{b.chapters} CH</p>
-                  </button>
+                  </motion.button>
                 ))}
-              </div>
+              </StaggerList>
             </div>
           </div>
         )}
@@ -255,6 +262,6 @@ export default function Directory() {
           </div>
         )}
       </main>
-    </div>
+    </PageWrapper>
   );
 }

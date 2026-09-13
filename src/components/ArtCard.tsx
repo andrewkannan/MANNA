@@ -1,5 +1,7 @@
 import React from 'react';
 import type { UserVerseData } from '../types';
+import { motion } from 'framer-motion';
+import { DotMatrixText } from './animations/DotMatrixText';
 
 interface NothingCardProps {
   verseDetails: { reference: string; text: string };
@@ -14,8 +16,10 @@ export default function NothingCard({ verseDetails, userData, isFlipped, onClick
       className="w-full aspect-[4/5] perspective-1000 cursor-pointer group"
       onClick={onClick}
     >
-      <div 
-        className={`relative w-full h-full transition-all duration-500 preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}
+      <motion.div 
+        className="relative w-full h-full preserve-3d"
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20 }}
       >
         {/* Front of Card (The Visual Hook) */}
         <div className="absolute inset-0 backface-hidden bg-black border-2 border-white/20 p-2 flex flex-col">
@@ -56,10 +60,10 @@ export default function NothingCard({ verseDetails, userData, isFlipped, onClick
           />
           <h3 className="font-mono text-red-600 font-bold tracking-[0.2em] uppercase text-sm mb-6 relative z-10">{verseDetails.reference}</h3>
           <p className="font-sans text-white text-xl leading-relaxed text-center relative z-10 font-medium">
-            "{verseDetails.text}"
+            {isFlipped ? <DotMatrixText text={`"${verseDetails.text}"`} /> : `"${verseDetails.text}"`}
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

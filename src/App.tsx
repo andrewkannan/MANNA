@@ -49,27 +49,30 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/t-display" element={<TDisplayPreview />} />
-        <Route path="/t-display-nothing" element={<TDisplayNothingOS />} />
-        <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<AppLayout />}>
-            <Route index element={<Home />} />
-            <Route path="directory" element={<Directory />} />
-            <Route path="bookmarks" element={<Bookmarks />} />
-            <Route path="verse/:id" element={<VerseDetail />} />
-            <Route path="progress" element={<Progress />} />
-            <Route path="display" element={<DisplayControl />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="memorize" element={<Memorize />} />
-            <Route path="devices" element={<Devices />} />
-            <Route path="manage" element={<Admin />} />
+    <>
+      <div className="scanlines" />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/t-display" element={<TDisplayPreview />} />
+          <Route path="/t-display-nothing" element={<TDisplayNothingOS />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<AppLayout />}>
+              <Route index element={<Home />} />
+              <Route path="directory" element={<Directory />} />
+              <Route path="bookmarks" element={<Bookmarks />} />
+              <Route path="verse/:id" element={<VerseDetail />} />
+              <Route path="progress" element={<Progress />} />
+              <Route path="display" element={<DisplayControl />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="memorize" element={<Memorize />} />
+              <Route path="devices" element={<Devices />} />
+              <Route path="manage" element={<Admin />} />
+            </Route>
           </Route>
-        </Route>
-        <Route path="/login" element={<Login />} />
-      </Routes>
-    </BrowserRouter>
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 }
 

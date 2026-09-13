@@ -1,3 +1,4 @@
+import { PageWrapper } from '../components/animations/PageWrapper';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Download, Upload, Bell, Wand2, BookOpen, Monitor } from 'lucide-react';
 import { db } from '../db/db';
@@ -50,7 +51,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-full pb-24 bg-black text-white font-sans">
+    <PageWrapper className="min-h-full pb-24 bg-black text-white font-sans">
       <header className="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/10 px-6 py-4 flex items-center z-10">
         <button onClick={() => navigate(-1)} className="flex items-center text-white hover:text-red-500 transition-colors">
           <ChevronLeft size={28} strokeWidth={2} className="-ml-2" />
@@ -238,7 +239,7 @@ export default function Settings() {
           </div>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }
 

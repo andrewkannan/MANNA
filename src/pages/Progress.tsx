@@ -1,3 +1,4 @@
+import { PageWrapper } from '../components/animations/PageWrapper';
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
@@ -30,7 +31,7 @@ export default function Progress() {
   };
 
   return (
-    <div className="min-h-full pb-24 bg-black text-white font-sans">
+    <PageWrapper className="min-h-full pb-24 bg-black text-white font-sans">
       <header className="px-6 pt-12 pb-6 sticky top-0 bg-black/90 backdrop-blur-md z-10 border-b border-white/10">
         <h1 className="text-4xl font-black tracking-tighter">ANALYTICS</h1>
         <p className="font-mono text-red-500 text-[10px] tracking-[0.2em] uppercase font-bold mt-1">System Diagnostics</p>
@@ -137,6 +138,6 @@ export default function Progress() {
         </div>
 
       </main>
-    </div>
+    </PageWrapper>
   );
 }

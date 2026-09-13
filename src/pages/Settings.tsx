@@ -179,7 +179,10 @@ export default function Settings() {
                         method: 'POST',
                         headers: { Authorization: `Bearer ${useAuth.getState().token}` }
                       });
-                      alert('Translation process started in the cloud! Verses will populate over the next few minutes.');
+                      alert('Translation process started in the cloud! Verses will populate over the next few seconds.');
+                      setTimeout(() => {
+                        useData.getState().fetchBookmarks();
+                      }, 3000);
                     } catch (e: any) {
                       alert('Error: ' + e.message);
                     }

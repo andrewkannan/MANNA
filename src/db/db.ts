@@ -20,12 +20,11 @@ db.version(2).stores({
 db.on('populate', () => {
   db.appState.add({
     id: 'singleton',
-    theme: 'dark',
-    notificationsEnabled: false,
-    pushSubscription: null,
+    lastActiveDate: null,
     currentStreak: 0,
-    lastReviewDate: null,
-    showTamil: false
+    longestStreak: 0,
+    showTamil: false,
+    preferredVersion: 'web'
   });
 });
 

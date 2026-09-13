@@ -19,6 +19,7 @@ export interface Bookmark {
     id: string;
     reference: string;
     text: string;
+    tamilText?: string | null;
     book: string;
     chapter: number;
     verse: number;

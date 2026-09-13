@@ -14,6 +14,7 @@ interface ChapterVerse {
 }
 
 import { useData } from '../store/useData';
+import { redLetterVerses } from '../utils/redLetters';
 
 export default function Directory() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -160,6 +161,7 @@ export default function Directory() {
                 const ref = `${selectedBook} ${selectedChapter}:${v.verse}`;
                 const bookmarkId = libraryRefs.get(ref);
                 const isAdded = !!bookmarkId;
+                const isRedLetter = redLetterVerses.has(ref);
                 
                 return (
                   <div 
@@ -169,7 +171,7 @@ export default function Directory() {
                   >
                     <div className="font-mono font-bold text-red-500 text-sm">{v.verse}</div>
                     <div className="flex-1">
-                      <p className={`font-sans text-sm leading-relaxed ${isAdded ? 'text-white font-bold' : 'text-white/90'}`}>{v.text}</p>
+                      <p className={`font-sans text-sm leading-relaxed ${isRedLetter ? 'text-red-500 font-bold' : (isAdded ? 'text-white font-bold' : 'text-white/90')}`}>{v.text}</p>
                     </div>
                   </div>
                 );

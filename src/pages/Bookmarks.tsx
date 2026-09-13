@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, Plus, CloudDownload, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useData } from '../store/useData';
+import { redLetterVerses } from '../utils/redLetters';
 
 export default function Bookmarks() {
   const [search, setSearch] = useState('');
@@ -84,14 +85,17 @@ export default function Bookmarks() {
         )}
 
         <div className="space-y-4">
-          {verses?.map((bookmark) => (
-            <Link key={bookmark.id} to={`/verse/${bookmark.id}`} className="block group">
-              <div className="p-5 bg-transparent border border-white/20 rounded-xl group-hover:border-red-600 group-hover:bg-[#111] transition-all">
-                <h3 className="font-mono text-[10px] font-bold text-red-500 tracking-[0.2em] uppercase mb-2">{bookmark.verse.reference}</h3>
-                <p className="text-white/80 font-sans text-sm leading-snug line-clamp-2">{bookmark.verse.text}</p>
-              </div>
-            </Link>
-          ))}
+          {verses?.map((bookmark) => {
+            const isRedLetter = redLetterVerses.has(bookmark.verse.reference);
+            return (
+              <Link key={bookmark.id} to={`/verse/${bookmark.id}`} className="block group">
+                <div className="p-5 bg-transparent border border-white/20 rounded-xl group-hover:border-red-600 group-hover:bg-[#111] transition-all">
+                  <h3 className="font-mono text-[10px] font-bold text-red-500 tracking-[0.2em] uppercase mb-2">{bookmark.verse.reference}</h3>
+                  <p className={`font-sans text-sm leading-snug line-clamp-2 ${isRedLetter ? 'text-red-500 font-bold' : 'text-white/80'}`}>{bookmark.verse.text}</p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </main>
 

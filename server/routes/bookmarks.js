@@ -155,5 +155,31 @@ router.delete("/:id", authenticate, async (req, res) => {
   }
 });
 
+router.post("/translate-all", authenticate, async (req, res) => {
+  res.json({ message: "Translation started in background" });
+  
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const verses = await prisma.verse.findMany({ where: { tamilText: null } });
+    for (const verse of verses) {
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: `Translate the following Bible verse (${verse.reference}) exactly to the standard Tamil Bible translation (BSI/OVM) without any additional formatting, markdown, or commentary. Only output the Tamil verse text.\n\nVerse: "${verse.text}"`,
+        });
+        await prisma.verse.update({
+          where: { id: verse.id },
+          data: { tamilText: response.text.trim() }
+        });
+        await new Promise(r => setTimeout(r, 1000));
+      } catch (e) {
+        console.error("Translation fail:", e);
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+});
+
 export default router;
 

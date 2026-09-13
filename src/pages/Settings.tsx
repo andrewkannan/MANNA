@@ -172,6 +172,22 @@ export default function Settings() {
                 <p className="font-sans text-xs text-white/50 leading-relaxed mb-4">
                   Automatically overlay Tamil (OVM) translation beneath English verses.
                 </p>
+                <button
+                  onClick={async () => {
+                    try {
+                      await fetch('/api/bookmarks/translate-all', {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${useAuth.getState().token}` }
+                      });
+                      alert('Translation process started in the cloud! Verses will populate over the next few minutes.');
+                    } catch (e: any) {
+                      alert('Error: ' + e.message);
+                    }
+                  }}
+                  className="w-full bg-[#222] text-white/50 font-mono text-[10px] font-bold py-2 tracking-widest uppercase hover:text-white transition-colors border border-white/20"
+                >
+                  Force Sync Past Verses
+                </button>
               </div>
             </div>
           </div>

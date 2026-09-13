@@ -5,6 +5,19 @@ import { authenticate } from "./auth.js";
 const prisma = new PrismaClient();
 const router = express.Router();
 
+router.get("/heatmap", authenticate, async (req, res) => {
+  try {
+    const logs = await prisma.reviewLog.findMany({
+      where: { userId: req.userId },
+      orderBy: { date: 'asc' }
+    });
+    res.json(logs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 router.get("/", authenticate, async (req, res) => {
   try {
     const bookmarks = await prisma.bookmark.findMany({
@@ -80,6 +93,16 @@ router.put("/:id", authenticate, async (req, res) => {
       data,
       include: { verse: true }
     });
+
+    if (data.lastReviewed) {
+      const today = new Date().toISOString().split('T')[0];
+      await prisma.reviewLog.upsert({
+        where: { userId_date: { userId: req.userId, date: today } },
+        update: { count: { increment: 1 } },
+        create: { userId: req.userId, date: today, count: 1 }
+      });
+    }
+
     res.json({
       ...bookmark,
       themes: JSON.parse(bookmark.themes),

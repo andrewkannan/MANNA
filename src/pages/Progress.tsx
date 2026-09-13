@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Activity, Flame, Target, BrainCircuit } from 'lucide-react';
@@ -7,7 +8,19 @@ import { useAuth } from '../store/useAuth';
 
 export default function Progress() {
   const { bookmarks } = useData();
+  const token = useAuth(state => state.token);
   const appState = useLiveQuery(() => db.appState.get('singleton' as any));
+  const [heatmapLogs, setHeatmapLogs] = useState<{date: string, count: number}[]>([]);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch('/api/bookmarks/heatmap', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (Array.isArray(d)) setHeatmapLogs(d);
+      })
+      .catch(console.error);
+  }, [token]);
 
   const stats = {
     total: bookmarks.length || 0,
@@ -84,6 +97,42 @@ export default function Progress() {
               <div className="w-2 h-2 bg-white" />
               <span className="font-mono text-[8px] uppercase tracking-widest text-white/50">Learning</span>
             </div>
+          </div>
+        </div>
+
+        {/* Heatmap */}
+        <div className="bg-transparent border border-white/20 p-6 mt-8">
+          <h3 className="font-mono text-[10px] tracking-[0.2em] uppercase font-bold text-white/70 mb-4">Activity Core</h3>
+          <div className="flex flex-wrap gap-1">
+            {Array.from({ length: 60 }).map((_, i) => {
+              const d = new Date();
+              d.setDate(d.getDate() - (59 - i));
+              const dateStr = d.toISOString().split('T')[0];
+              const log = heatmapLogs.find(l => l.date === dateStr);
+              
+              let bgColor = 'bg-[#111]';
+              if (log) {
+                if (log.count > 10) bgColor = 'bg-red-500';
+                else if (log.count > 5) bgColor = 'bg-red-700';
+                else if (log.count > 0) bgColor = 'bg-red-950';
+              }
+              
+              return (
+                <div 
+                  key={i} 
+                  title={`${dateStr}: ${log?.count || 0} reviews`}
+                  className={`w-3 h-3 ${bgColor} border border-black`}
+                />
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-end gap-2 mt-3 font-mono text-[8px] uppercase tracking-widest text-white/50">
+            <span>Less</span>
+            <div className="w-2 h-2 bg-[#111]" />
+            <div className="w-2 h-2 bg-red-950" />
+            <div className="w-2 h-2 bg-red-700" />
+            <div className="w-2 h-2 bg-red-500" />
+            <span>More</span>
           </div>
         </div>
 

@@ -16,6 +16,7 @@ model User {
 
   devices      Device[]
   bookmarks    Bookmark[]
+  reviewLogs   ReviewLog[]
 }
 
 model Device {
@@ -73,4 +74,14 @@ model Bookmark {
   createdAt        DateTime @default(now())
   
   @@unique([userId, verseId])
+}
+
+model ReviewLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      String   // Stored as "YYYY-MM-DD" to easily group by day
+  count     Int      @default(0)
+
+  @@unique([userId, date])
 }

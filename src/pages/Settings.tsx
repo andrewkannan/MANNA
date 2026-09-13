@@ -144,6 +144,38 @@ export default function Settings() {
             </div>
           </div>
 
+          <div className="bg-[#111] border border-white/20 p-5 mb-4">
+            <div className="flex items-start gap-4 mb-4 text-white">
+              <BookOpen size={18} strokeWidth={2} className="mt-0.5 text-red-500" />
+              <div className="w-full">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-mono text-xs uppercase tracking-widest font-bold">Dual-Language Protocol</p>
+                  <label className="flex items-center cursor-pointer">
+                    <div className="relative">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only" 
+                        checked={appState?.showTamil || false}
+                        onChange={async (e) => {
+                          const val = e.target.checked;
+                          const state = await db.appState.get('singleton' as any);
+                          if (state) {
+                            await db.appState.update('singleton' as any, { showTamil: val });
+                          }
+                        }}
+                      />
+                      <div className={`block w-10 h-6 rounded-full transition-colors ${appState?.showTamil ? 'bg-red-600' : 'bg-white/20'}`}></div>
+                      <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${appState?.showTamil ? 'transform translate-x-4' : ''}`}></div>
+                    </div>
+                  </label>
+                </div>
+                <p className="font-sans text-xs text-white/50 leading-relaxed mb-4">
+                  Automatically overlay Tamil (OVM) translation beneath English verses.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-[#111] border border-white/20 p-5">
             <div className="flex items-start gap-4 mb-4 text-white">
               <Wand2 size={18} strokeWidth={2} className="mt-0.5 text-red-500" />

@@ -16,4 +16,17 @@ db.version(2).stores({
   appState: 'id' // 'id' will just be 'singleton'
 });
 
+// Initialize default state
+db.on('populate', () => {
+  db.appState.add({
+    id: 'singleton',
+    theme: 'dark',
+    notificationsEnabled: false,
+    pushSubscription: null,
+    currentStreak: 0,
+    lastReviewDate: null,
+    showTamil: false
+  });
+});
+
 export { db };

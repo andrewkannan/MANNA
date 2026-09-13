@@ -52,6 +52,7 @@ model Verse {
   id        String   @id @default(uuid())
   reference String   // e.g. "Genesis 1:1"
   text      String
+  tamilText String?  // Automatically fetched Tamil translation
   book      String
   chapter   Int
   verse     Int

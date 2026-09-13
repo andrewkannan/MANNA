@@ -9,6 +9,7 @@ export interface BibleVerse {
   verse: number;
   reference: string;
   text: string;
+  tamilText?: string | null;
   version: string;
 }
 
@@ -43,4 +44,5 @@ export interface AppState {
   geminiApiKey?: string;
   displayVerseId?: string | null;
   preferredVersion?: string;
+  showTamil?: boolean;
 }

@@ -1,16 +1,21 @@
 import React from 'react';
-import type { UserVerseData } from '../types';
+import type { UserVerseData, BibleVerse } from '../types';
 import { motion } from 'framer-motion';
 import { DotMatrixText } from './animations/DotMatrixText';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/db';
 
 interface NothingCardProps {
-  verseDetails: { reference: string; text: string };
+  verseDetails: BibleVerse;
   userData: UserVerseData;
   isFlipped: boolean;
   onClick: () => void;
 }
 
 export default function NothingCard({ verseDetails, userData, isFlipped, onClick }: NothingCardProps) {
+  const appState = useLiveQuery(() => db.appState.get('singleton' as any));
+  const showTamil = appState?.showTamil;
+
   return (
     <div 
       className="w-full aspect-[4/5] perspective-1000 cursor-pointer group"
@@ -59,9 +64,17 @@ export default function NothingCard({ verseDetails, userData, isFlipped, onClick
             }}
           />
           <h3 className="font-mono text-red-600 font-bold tracking-[0.2em] uppercase text-sm mb-6 relative z-10">{verseDetails.reference}</h3>
-          <p className="font-sans text-white text-xl leading-relaxed text-center relative z-10 font-medium">
-            {isFlipped ? <DotMatrixText text={`"${verseDetails.text}"`} /> : `"${verseDetails.text}"`}
-          </p>
+          
+          <div className="relative z-10 w-full overflow-y-auto no-scrollbar pb-4 text-center">
+            <p className="font-sans text-white text-xl leading-relaxed font-medium">
+              {isFlipped ? <DotMatrixText text={`"${verseDetails.text}"`} /> : `"${verseDetails.text}"`}
+            </p>
+            {showTamil && verseDetails.tamilText && (
+              <p className="font-sans text-white/50 text-base leading-relaxed font-medium mt-6 pt-6 border-t border-white/10">
+                {isFlipped ? <DotMatrixText text={`"${verseDetails.tamilText}"`} /> : `"${verseDetails.tamilText}"`}
+              </p>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>

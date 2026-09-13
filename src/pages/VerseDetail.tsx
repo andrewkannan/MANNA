@@ -54,9 +54,9 @@ export default function VerseDetail() {
           >
             ENG
           </button>
-          {bookmark.tamilExplanation && (
+          {verse.tamilText && (
             <button 
-              onClick={() => playAudio(bookmark.tamilExplanation || '', 'ta-IN')}
+              onClick={() => playAudio(verse.tamilText || '', 'ta-IN')}
               className="flex items-center gap-1 bg-[#111] border border-white/20 px-2 py-1 font-mono text-[8px] uppercase tracking-widest hover:bg-white hover:text-black transition-colors text-red-500"
             >
               TAMIL

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '../db/db';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ChevronLeft, Folder, Loader2, Plus, Check } from 'lucide-react';
+import { ChevronLeft, Folder, Loader2, Plus, Minus } from 'lucide-react';
 
 interface Book {
   name: string;
@@ -175,11 +175,11 @@ export default function Directory() {
                       onClick={() => toggleVerse(v, bookmarkId)}
                       className={`w-10 h-10 shrink-0 flex items-center justify-center border transition-colors ${
                         isAdded 
-                          ? 'border-transparent text-green-500 hover:text-red-500' 
+                          ? 'border-transparent text-red-500 hover:text-red-400' 
                           : 'border-white/20 text-white hover:bg-white hover:text-black hover:border-white'
                       }`}
                     >
-                      {isAdded ? <Check size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={2} />}
+                      {isAdded ? <Minus size={18} strokeWidth={3} /> : <Plus size={18} strokeWidth={2} />}
                     </button>
                   </div>
                 );

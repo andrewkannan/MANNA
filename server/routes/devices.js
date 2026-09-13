@@ -69,6 +69,29 @@ router.get("/", authenticate, async (req, res) => {
   }
 });
 
+// Update device config (auto-rotate)
+router.patch("/:id/config", authenticate, async (req, res) => {
+  const { autoRotate, rotateInterval } = req.body;
+  try {
+    const device = await prisma.device.findFirst({
+      where: { id: req.params.id, ownerId: req.userId }
+    });
+    if (!device) return res.status(403).json({ error: "Forbidden" });
+    
+    await prisma.device.update({
+      where: { id: device.id },
+      data: {
+        autoRotate: autoRotate !== undefined ? autoRotate : device.autoRotate,
+        rotateInterval: rotateInterval !== undefined ? rotateInterval : device.rotateInterval
+      }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // Unlink a device
 router.post("/unlink/:id", authenticate, async (req, res) => {
   try {

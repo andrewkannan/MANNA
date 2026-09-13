@@ -16,7 +16,36 @@ router.get("/active", async (req, res) => {
       include: { activeVerse: true }
     });
     
-    if (device && device.activeVerse) {
+    if (!device) return res.status(404).json({ error: "Device not found." });
+
+    if (device.autoRotate && device.ownerId) {
+      const now = new Date();
+      const diffMinutes = (now.getTime() - new Date(device.lastRotatedAt).getTime()) / 60000;
+      
+      if (diffMinutes >= device.rotateInterval) {
+        const userBookmarks = await prisma.bookmark.findMany({
+          where: { userId: device.ownerId },
+          include: { verse: true }
+        });
+        
+        if (userBookmarks.length > 0) {
+          const randomIndex = Math.floor(Math.random() * userBookmarks.length);
+          const nextBookmark = userBookmarks[randomIndex];
+          
+          await prisma.device.update({
+            where: { id: device.id },
+            data: {
+              activeVerseId: nextBookmark.verseId,
+              lastRotatedAt: now
+            }
+          });
+          
+          return res.json(nextBookmark.verse);
+        }
+      }
+    }
+
+    if (device.activeVerse) {
       res.json(device.activeVerse);
     } else {
       res.status(404).json({ error: "No active verse set." });

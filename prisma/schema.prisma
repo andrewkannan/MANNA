@@ -19,17 +19,21 @@ model User {
 }
 
 model Device {
-  id          String   @id @default(uuid())
-  macAddress  String?  @unique
-  pairingCode String?  @unique // 6-digit code displayed on screen
-  name        String?
-  ownerId     String?
-  owner       User?    @relation(fields: [ownerId], references: [id])
-  createdAt   DateTime @default(now())
+  id             String   @id @default(uuid())
+  macAddress     String   @unique // Used by ESP32 to identify itself
+  pairingCode    String?  // Temporary 6-digit code for linking
+  name           String?
+  ownerId        String?  // Links the device to a user
+  activeVerseId  String?  // The ID of the currently displayed bookmark
+  autoRotate     Boolean  @default(false)
+  rotateInterval Int      @default(60) // In minutes
+  lastRotatedAt  DateTime @default(now())
+
+  owner          User?    @relation(fields: [ownerId], references: [id])
+  createdAt      DateTime @default(now())
   
   // Link to active verse
-  activeVerseId String?
-  activeVerse   Verse? @relation(fields: [activeVerseId], references: [id])
+  activeVerse    Verse?   @relation(fields: [activeVerseId], references: [id])
 }
 
 model Verse {

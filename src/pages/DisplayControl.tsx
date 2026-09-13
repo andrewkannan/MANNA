@@ -54,6 +54,23 @@ export default function DisplayControl() {
   const activeBookmark = bookmarks.find(b => b.verse.id === activeVerseId);
   const activeVerse = activeBookmark?.verse;
 
+  const handleSetAutoRotate = async (deviceId: string, autoRotate: boolean, rotateInterval: number) => {
+    try {
+      await fetch(`/api/devices/${deviceId}/config`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ autoRotate, rotateInterval })
+      });
+      // update local state
+      setDevices(prev => prev.map(d => d.id === deviceId ? { ...d, autoRotate, rotateInterval } : d));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="min-h-full pb-24 bg-black text-white">
       <header className="px-6 pt-12 pb-6 border-b border-white/10">
@@ -62,6 +79,54 @@ export default function DisplayControl() {
       </header>
 
       <main className="px-6 py-6">
+        {devices.length > 0 && (
+          <div className="mb-8">
+            <h2 className="font-mono text-white/50 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Hardware Settings</h2>
+            <div className="space-y-4">
+              {devices.map(device => (
+                <div key={device.id} className="bg-[#111] border border-white/10 p-5 rounded-xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-mono text-xs font-bold tracking-widest uppercase">{device.name || "T-Display"}</h3>
+                    <label className="flex items-center cursor-pointer">
+                      <div className="relative">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only" 
+                          checked={device.autoRotate || false}
+                          onChange={(e) => handleSetAutoRotate(device.id, e.target.checked, device.rotateInterval || 60)}
+                        />
+                        <div className={`block w-10 h-6 rounded-full transition-colors ${device.autoRotate ? 'bg-red-600' : 'bg-white/20'}`}></div>
+                        <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${device.autoRotate ? 'transform translate-x-4' : ''}`}></div>
+                      </div>
+                      <span className="ml-3 font-mono text-[10px] uppercase tracking-widest text-white/70">Auto Rotate</span>
+                    </label>
+                  </div>
+                  {device.autoRotate && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex justify-between font-mono text-[10px] text-white/50">
+                        <span>Interval: {device.rotateInterval || 60}m</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="1" 
+                        max="1440" 
+                        value={device.rotateInterval || 60}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          setDevices(prev => prev.map(d => d.id === device.id ? { ...d, rotateInterval: val } : d));
+                        }}
+                        onMouseUp={(e) => handleSetAutoRotate(device.id, true, parseInt((e.target as any).value))}
+                        onTouchEnd={(e) => handleSetAutoRotate(device.id, true, parseInt((e.target as any).value))}
+                        className="w-full accent-red-600"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <h2 className="font-mono text-white/50 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Active Feed</h2>
         
         {activeVerse ? (

@@ -14,9 +14,20 @@ model User {
   role         String   @default("USER")
   createdAt    DateTime @default(now())
 
-  devices      Device[]
-  bookmarks    Bookmark[]
-  reviewLogs   ReviewLog[]
+  devices       Device[]
+  bookmarks     Bookmark[]
+  reviewLogs    ReviewLog[]
+  subscriptions PushSubscription[]
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
 }
 
 model Device {

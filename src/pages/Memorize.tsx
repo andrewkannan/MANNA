@@ -143,16 +143,32 @@ export default function Memorize() {
         
         {!isFlipped && (
           <div className="mt-8 flex flex-col items-center">
-            {recognitionRef.current ? (
+            <div className="flex gap-4">
+              {recognitionRef.current ? (
+                <button 
+                  onClick={toggleListening}
+                  className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${isListening ? 'bg-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.5)] animate-pulse' : 'bg-[#111] text-white border border-white/20 hover:border-white'}`}
+                >
+                  {isListening ? <MicOff size={24} /> : <Mic size={24} />}
+                </button>
+              ) : (
+                <p className="text-xs text-white/50 font-mono text-center">Speech Recognition not supported in this browser.</p>
+              )}
+              
               <button 
-                onClick={toggleListening}
-                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${isListening ? 'bg-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.5)] animate-pulse' : 'bg-[#111] text-white border border-white/20 hover:border-white'}`}
+                onClick={() => {
+                  if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(currentVerse.text);
+                    utterance.rate = 0.9; // Slightly slower for better dictation
+                    window.speechSynthesis.cancel(); // Stop any currently playing audio
+                    window.speechSynthesis.speak(utterance);
+                  }
+                }}
+                className="w-16 h-16 rounded-full flex items-center justify-center transition-all bg-[#111] text-white border border-white/20 hover:border-white"
               >
-                {isListening ? <MicOff size={24} /> : <Mic size={24} />}
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
               </button>
-            ) : (
-              <p className="text-xs text-white/50 font-mono text-center">Speech Recognition not supported in this browser.</p>
-            )}
+            </div>
             
             {transcript && !isFlipped && (
               <p className="mt-6 text-sm font-sans text-center text-white/70 px-4">

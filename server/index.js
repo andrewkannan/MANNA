@@ -24,6 +24,7 @@ import authRoutes from './routes/auth.js';
 import devicesRoutes from './routes/devices.js';
 import bookmarksRoutes from './routes/bookmarks.js';
 import adminRoutes from './routes/admin.js';
+import pushRoutes from './routes/push.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/devices', devicesRoutes);
@@ -31,6 +32,7 @@ app.use('/api/bookmarks', bookmarksRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/display', displayRoutes);
 app.use('/api/bible', bibleRoutes);
+app.use('/api/push', pushRoutes);
 
 // Serve static frontend files (when deployed to Railway)
 app.use(express.static(path.join(__dirname, '../dist')));

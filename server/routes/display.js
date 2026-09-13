@@ -83,5 +83,60 @@ router.post("/active", authenticate, async (req, res) => {
   }
 });
 
+// Hardware posts an action (e.g. Next button, Master button)
+router.post("/action", async (req, res) => {
+  const { deviceId, action } = req.body;
+  if (!deviceId || !action) return res.status(400).json({ error: "Missing data" });
+
+  try {
+    const device = await prisma.device.findUnique({
+      where: { id: deviceId }
+    });
+    if (!device || !device.ownerId) return res.status(403).json({ error: "Forbidden" });
+
+    if (action === "NEXT" || action === "REVIEW") {
+      if (action === "REVIEW" && device.activeVerseId) {
+        // Find bookmark and update review
+        const bookmark = await prisma.bookmark.findUnique({
+          where: { userId_verseId: { userId: device.ownerId, verseId: device.activeVerseId } }
+        });
+        if (bookmark) {
+          const today = new Date().toISOString().split('T')[0];
+          await prisma.reviewLog.upsert({
+            where: { userId_date: { userId: device.ownerId, date: today } },
+            update: { count: { increment: 1 } },
+            create: { userId: device.ownerId, date: today, count: 1 }
+          });
+          // Update SRS to GOOD
+          await prisma.bookmark.update({
+            where: { id: bookmark.id },
+            data: { status: 'REVIEW', lastReviewed: Date.now() }
+          });
+        }
+      }
+
+      // Move to next random verse
+      const userBookmarks = await prisma.bookmark.findMany({
+        where: { userId: device.ownerId },
+        include: { verse: true }
+      });
+      if (userBookmarks.length > 0) {
+        const nextBookmark = userBookmarks[Math.floor(Math.random() * userBookmarks.length)];
+        await prisma.device.update({
+          where: { id: device.id },
+          data: {
+            activeVerseId: nextBookmark.verseId,
+            lastRotatedAt: new Date()
+          }
+        });
+      }
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 export default router;
 

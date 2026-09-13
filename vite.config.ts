@@ -29,6 +29,7 @@ export default defineConfig({
         ]
       },
       workbox: {
+        importScripts: ['push-sw.js'],
         runtimeCaching: [
           {
             urlPattern: /^\/api\/bible\/.*/i,

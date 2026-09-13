@@ -170,23 +170,90 @@ export default function Settings() {
 
         <div className="mb-10">
           <h2 className="font-mono text-red-500 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">Notifications</h2>
-          <div className="bg-[#111] border border-white/20 p-5 opacity-50 relative overflow-hidden">
-            <div 
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{ 
-                backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #ffffff 10px, #ffffff 11px)'
-              }}
-            />
-            <div className="flex items-center gap-4 mb-2 text-white relative z-10">
-              <Bell size={18} strokeWidth={2} />
-              <span className="font-mono text-xs uppercase tracking-widest font-bold">Push Alerts</span>
+          <div className="bg-[#111] border border-white/20 p-5">
+            <div className="flex items-center justify-between mb-4 text-white">
+              <div className="flex items-center gap-4">
+                <Bell size={18} strokeWidth={2} className="text-red-500" />
+                <span className="font-mono text-xs uppercase tracking-widest font-bold">Push Alerts</span>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const reg = await navigator.serviceWorker.ready;
+                    const sub = await reg.pushManager.getSubscription();
+                    if (sub) {
+                      alert('Already subscribed!');
+                    } else {
+                      const res = await fetch('/api/push/vapidPublicKey');
+                      const { publicKey } = await res.json();
+                      
+                      const convertedVapidKey = urlBase64ToUint8Array(publicKey);
+                      
+                      const newSub = await reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: convertedVapidKey
+                      });
+                      
+                      await fetch('/api/push/register', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${useAuth.getState().token}`
+                        },
+                        body: JSON.stringify(newSub)
+                      });
+                      alert('Subscribed to push notifications!');
+                    }
+                  } catch (e: any) {
+                    alert('Error: ' + e.message);
+                  }
+                }}
+                className="bg-white text-black px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest hover:bg-white/80"
+              >
+                Enable
+              </button>
             </div>
-            <p className="font-sans text-xs text-white/50 relative z-10">
-              Daily review reminders are not currently supported in this client.
+            <p className="font-sans text-xs text-white/50 mb-4">
+              Receive daily reminders when verses are due for review.
             </p>
+            <button
+              onClick={async () => {
+                try {
+                  await fetch('/api/push/test', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${useAuth.getState().token}`
+                    },
+                    body: JSON.stringify({ title: 'System Alert', body: 'Push protocol active.' })
+                  });
+                } catch (e: any) {
+                  alert('Error: ' + e.message);
+                }
+              }}
+              className="w-full border border-white/20 py-2 font-mono text-[10px] uppercase tracking-widest text-white/50 hover:bg-white hover:text-black transition-colors"
+            >
+              Send Test Notification
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+// Utility function
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
 }

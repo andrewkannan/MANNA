@@ -42,22 +42,25 @@ export default function VerseDetail() {
 
   return (
     <PageWrapper className="min-h-full pb-10 bg-black text-white font-sans">
-      <header className="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center justify-between z-30">
-        <button onClick={() => navigate(-1)} className="flex items-center text-white hover:text-red-500 transition-colors">
-          <ChevronLeft size={28} strokeWidth={2} className="-ml-2" />
+      <header className="sticky top-0 bg-black/90 backdrop-blur-md border-b border-white/10 px-2 py-2 flex items-center justify-between z-30">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="flex items-center justify-center min-w-[44px] min-h-[44px] text-white active:bg-white/10 rounded-full transition-colors"
+        >
+          <ChevronLeft size={28} strokeWidth={2} />
         </button>
         <div className="font-mono text-[10px] uppercase font-bold tracking-[0.2em] text-white">{verse.reference}</div>
-        <div className="flex gap-3">
+        <div className="flex gap-1">
           <button 
             onClick={() => playAudio(verse.text, 'en-US')}
-            className="flex items-center gap-1 bg-[#111] border border-white/20 px-2 py-1 font-mono text-[8px] uppercase tracking-widest hover:bg-white hover:text-black transition-colors"
+            className="font-mono text-[10px] uppercase font-bold tracking-widest min-w-[44px] min-h-[44px] px-2 active:bg-white/10 rounded-md border border-white/20 text-white transition-colors flex items-center justify-center"
           >
             ENG
           </button>
           {verse.tamilText && (
             <button 
               onClick={() => playAudio(verse.tamilText || '', 'ta-IN')}
-              className="flex items-center gap-1 bg-[#111] border border-white/20 px-2 py-1 font-mono text-[8px] uppercase tracking-widest hover:bg-white hover:text-black transition-colors text-red-500"
+              className="font-mono text-[10px] uppercase font-bold tracking-widest min-w-[44px] min-h-[44px] px-2 active:bg-red-500/20 rounded-md border border-red-500/30 text-red-500 transition-colors flex items-center justify-center ml-1"
             >
               TAMIL
             </button>

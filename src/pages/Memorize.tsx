@@ -103,6 +103,59 @@ export default function Memorize() {
   const currentBookmark = activeBookmarks[currentIndex];
   const currentVerse = currentBookmark.verse;
 
+  const [inputMode, setInputMode] = useState<'VOICE' | 'TYPE'>('VOICE');
+  const [typingIndex, setTypingIndex] = useState(0);
+  const [typingError, setTypingError] = useState(false);
+
+  // Split verse into words, keeping punctuation attached for display
+  const words = currentVerse ? currentVerse.text.split(/\s+/) : [];
+
+  useEffect(() => {
+    // Reset typing state when verse changes
+    setTypingIndex(0);
+    setTypingError(false);
+  }, [currentIndex]);
+
+  useEffect(() => {
+    if (inputMode !== 'TYPE' || isFlipped) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore meta keys
+      if (e.ctrlKey || e.metaKey || e.altKey || e.key.length > 1) return;
+      
+      const expectedWord = words[typingIndex];
+      if (!expectedWord) return;
+
+      // Extract the first alphanumeric character of the word
+      const match = expectedWord.match(/[a-zA-Z0-9]/);
+      if (!match) {
+        // If word has no letters (e.g. just a dash), auto-skip it
+        setTypingIndex(prev => prev + 1);
+        return;
+      }
+      
+      const expectedChar = match[0].toLowerCase();
+      const typedChar = e.key.toLowerCase();
+
+      if (typedChar === expectedChar) {
+        setTypingError(false);
+        setTypingIndex(prev => {
+          const next = prev + 1;
+          if (next >= words.length) {
+            setIsFlipped(true); // Complete!
+          }
+          return next;
+        });
+      } else {
+        setTypingError(true);
+        setTimeout(() => setTypingError(false), 300);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [inputMode, isFlipped, typingIndex, words]);
+
   const handleScore = async (score: 1 | 2 | 3 | 4) => {
     let result: 'EASY' | 'GOOD' | 'PRACTICE' | 'DIFFICULT' = 'GOOD';
     if (score === 1) result = 'DIFFICULT';
@@ -115,6 +168,7 @@ export default function Memorize() {
     
     if (currentIndex < activeBookmarks.length - 1) {
       setCurrentIndex(prev => prev + 1);
+      setIsFlipped(false);
     }
   };
 
@@ -135,12 +189,73 @@ export default function Memorize() {
       </header>
 
       <main className="flex-1 px-6 py-8 flex flex-col justify-center max-w-[400px] mx-auto w-full">
-        <NothingCard 
-          verseDetails={currentVerse}
-          userData={currentBookmark}
-          isFlipped={isFlipped}
-          onClick={() => setIsFlipped(!isFlipped)}
-        />
+        
+        {/* Input Mode Toggle */}
+        <div className="flex justify-center mb-8 gap-4">
+          <button 
+            onClick={() => setInputMode('VOICE')}
+            className={`px-4 py-2 font-mono text-[10px] tracking-widest uppercase border transition-colors ${inputMode === 'VOICE' ? 'border-red-600 bg-red-600/10 text-red-500' : 'border-white/20 text-white/50 hover:text-white'}`}
+          >
+            Voice Mode
+          </button>
+          <button 
+            onClick={() => setInputMode('TYPE')}
+            className={`px-4 py-2 font-mono text-[10px] tracking-widest uppercase border transition-colors ${inputMode === 'TYPE' ? 'border-red-600 bg-red-600/10 text-red-500' : 'border-white/20 text-white/50 hover:text-white'}`}
+          >
+            Kinesthetic Mode
+          </button>
+        </div>
+
+        {inputMode === 'VOICE' ? (
+          <NothingCard 
+            verseDetails={currentVerse}
+            userData={currentBookmark}
+            isFlipped={isFlipped}
+            onClick={() => setIsFlipped(!isFlipped)}
+          />
+        ) : (
+          <div className="bg-[#050505] border border-white/10 p-6 rounded-2xl min-h-[300px] relative overflow-hidden flex flex-col justify-center">
+            {/* Background Grid */}
+            <div 
+              className="absolute inset-0 opacity-[0.03] pointer-events-none"
+              style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1.5px)', backgroundSize: '10px 10px' }}
+            />
+            
+            <h3 className="font-mono text-red-600 font-bold tracking-[0.2em] uppercase text-xs mb-8 text-center relative z-10">
+              {currentVerse.reference}
+            </h3>
+            
+            <div className={`relative z-10 font-sans text-xl leading-relaxed text-center transition-colors duration-200 ${typingError ? 'text-red-500' : ''}`}>
+              {isFlipped ? (
+                <p className="text-white">"{currentVerse.text}"</p>
+              ) : (
+                <p>
+                  {words.map((word, i) => {
+                    const isRevealed = i < typingIndex;
+                    const isCurrent = i === typingIndex;
+                    return (
+                      <span 
+                        key={i} 
+                        className={`inline-block mr-1.5 transition-all duration-300 ${
+                          isRevealed ? 'text-white' : 
+                          isCurrent ? 'text-white/40 border-b-2 border-red-600/50' : 
+                          'text-transparent bg-white/10 select-none blur-[2px]'
+                        }`}
+                      >
+                        {isRevealed ? word : word.replace(/[a-zA-Z0-9]/g, '_')}
+                      </span>
+                    );
+                  })}
+                </p>
+              )}
+            </div>
+            {!isFlipped && (
+              <p className="font-mono text-[9px] text-white/30 uppercase tracking-[0.3em] text-center mt-12 animate-pulse">
+                Type the first letter of each word
+              </p>
+            )}
+          </div>
+        )}
         
         {!isFlipped && (
           <div className="mt-8 flex flex-col items-center">

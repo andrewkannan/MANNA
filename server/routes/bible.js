@@ -9,8 +9,14 @@ router.get('/chapter', async (req, res) => {
   const { book, chapter, translation = 'web' } = req.query;
   if (!book || !chapter) return res.status(400).json({ error: 'Missing book or chapter' });
   try {
-    let verses = await prisma.verse.findMany({ where: { book: book, chapter: parseInt(chapter), version: 'KJV' }, orderBy: { verse: 'asc' } });
-    if (verses.length > 0) { res.json(verses.map(v => ({ verse: v.verse, text: v.text }))); return; }
+    const requestedTranslation = translation.toLowerCase();
+    
+    // Only check local DB if KJV is requested
+    if (requestedTranslation === 'kjv') {
+      let verses = await prisma.verse.findMany({ where: { book: book, chapter: parseInt(chapter), version: 'KJV' }, orderBy: { verse: 'asc' } });
+      if (verses.length > 0) { res.json(verses.map(v => ({ verse: v.verse, text: v.text }))); return; }
+    }
+    
     const response = await fetch('https://bible-api.com/' + encodeURIComponent(book + ' ' + chapter) + '?translation=' + translation);
     if (!response.ok) throw new Error('Bible API returned ' + response.status);
     const data = await response.json();
@@ -24,8 +30,12 @@ router.get('/search', async (req, res) => {
   const { ref, translation = 'web' } = req.query;
   if (!ref) { return res.status(400).json({ error: 'Missing ref parameter' }); }
   try {
-    const verse = await prisma.verse.findFirst({ where: { reference: ref, version: 'KJV' } });
-    if (verse) { res.json({ reference: verse.reference, text: verse.text }); return; }
+    const requestedTranslation = translation.toLowerCase();
+    if (requestedTranslation === 'kjv') {
+      const verse = await prisma.verse.findFirst({ where: { reference: ref, version: 'KJV' } });
+      if (verse) { res.json({ reference: verse.reference, text: verse.text }); return; }
+    }
+    
     const response = await fetch('https://bible-api.com/' + encodeURIComponent(ref) + '?translation=' + translation);
     if (!response.ok) { throw new Error('Bible API returned ' + response.status); }
     const data = await response.json();

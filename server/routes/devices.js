@@ -39,7 +39,7 @@ router.post("/register-hardware", async (req, res) => {
 router.post("/claim", authenticate, async (req, res) => {
   const { pairingCode, name } = req.body;
   try {
-    const device = await prisma.device.findUnique({ where: { pairingCode } });
+    const device = await prisma.device.findFirst({ where: { pairingCode } });
     if (!device) return res.status(400).json({ error: "Invalid pairing code" });
     if (device.ownerId) return res.status(400).json({ error: "Device already claimed" });
     

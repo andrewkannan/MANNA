@@ -1,6 +1,8 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { authenticate } from "./auth.js";
+import path from "path";
+import fs from "fs";
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -60,66 +62,54 @@ async function advanceHardwareQueue(device) {
   return next.verse;
 }
 
-// ESP32 fetches the active verse
-router.get("/active", async (req, res) => {
-  const { deviceId } = req.query;
-  if (!deviceId) return res.status(400).json({ error: "Missing deviceId" });
-
-  try {
-    const device = await prisma.device.findUnique({
-      where: { id: String(deviceId) },
-      include: { activeVerse: true }
-    });
-    
-    if (!device) return res.status(404).json({ error: "Device not found." });
-
-    // If autoRotate is ON, it overrides hardware sequence queue and picks randomly every X minutes.
-    // If you want pure SRS Hardware Queue, keep autoRotate OFF.
-    if (device.autoRotate && device.ownerId) {
-      const now = new Date();
-      const diffMinutes = (now.getTime() - new Date(device.lastRotatedAt).getTime()) / 60000;
+  // ESP32 fetches the queue of verses (Offline Caching & Smart Dimming)
+  router.get("/queue", async (req, res) => {
+    const { deviceId } = req.query;
+    if (!deviceId) return res.status(400).json({ error: "Missing deviceId" });
+  
+    try {
+      const device = await prisma.device.findUnique({
+        where: { id: String(deviceId) },
+        include: { activeVerse: true }
+      });
       
-      if (diffMinutes >= device.rotateInterval) {
-        const userBookmarks = await prisma.bookmark.findMany({
-          where: { userId: device.ownerId },
-          include: { verse: true }
-        });
-        
-        if (userBookmarks.length > 0) {
-          const randomIndex = Math.floor(Math.random() * userBookmarks.length);
-          const nextBookmark = userBookmarks[randomIndex];
-          
-          await prisma.device.update({
-            where: { id: device.id },
-            data: { activeVerseId: nextBookmark.verseId, lastRotatedAt: now }
-          });
-          
-          return res.json(nextBookmark.verse);
-        }
+      if (!device) return res.status(404).json({ error: "Device not found." });
+      
+      // Get server hour for Smart Dimming
+      const serverHour = new Date().getHours();
+      
+      let queue = [];
+      
+      // Fetch up to 10 bookmarks for offline caching
+      if (device.ownerId) {
+         const bookmarks = await prisma.bookmark.findMany({
+           where: { userId: device.ownerId },
+           include: { verse: true },
+           orderBy: { nextReview: 'asc' },
+           take: 10
+         });
+         queue = bookmarks.map(b => b.verse);
       }
+      
+      // Fallback
+      if (queue.length === 0 && device.activeVerse) {
+        queue = [device.activeVerse];
+      }
+      
+      if (queue.length === 0) {
+        queue = [{ reference: "QUEUE EMPTY", text: "Please bookmark verses in the Web App." }];
+      }
+      
+      res.json({
+        serverHour,
+        verses: queue
+      });
+      
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Server error" });
     }
-
-    // Hardware sequence fallback (if no active verse, initialize queue)
-    if (!device.activeVerse && device.ownerId) {
-       const nextVerse = await advanceHardwareQueue(device);
-       if (nextVerse === "COMPLETE") {
-         return res.json({ reference: "GOAL COMPLETE", text: "You have reviewed all due verses today. Rest well." });
-       }
-       if (nextVerse) {
-         return res.json(nextVerse);
-       }
-    }
-
-    if (device.activeVerse) {
-      res.json(device.activeVerse);
-    } else {
-      res.status(404).json({ error: "No active verse set." });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
+  });
 
 router.post("/active", authenticate, async (req, res) => {
   const { deviceId, verseId } = req.body;
@@ -184,6 +174,21 @@ router.post("/action", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+// OTA Firmware Update Route
+router.get("/ota", (req, res) => {
+  const { deviceId } = req.query;
+  if (!deviceId) return res.status(400).send("Missing deviceId");
+  
+  // Serve firmware.bin from the project root's 'public' folder
+  const firmwarePath = path.join(process.cwd(), 'public', 'firmware.bin');
+  
+  if (fs.existsSync(firmwarePath)) {
+    res.download(firmwarePath, 'firmware.bin');
+  } else {
+    res.status(404).send("Firmware not found on server.");
   }
 });
 

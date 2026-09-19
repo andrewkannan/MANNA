@@ -85,7 +85,7 @@ async function advanceHardwareQueue(device) {
          const bookmarks = await prisma.bookmark.findMany({
            where: { userId: device.ownerId },
            include: { verse: true },
-           orderBy: { nextReview: 'asc' },
+           orderBy: { dueDate: 'asc' },
            take: 10
          });
          queue = bookmarks.map(b => b.verse);

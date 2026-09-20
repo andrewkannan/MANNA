@@ -104,7 +104,7 @@ export default function DisplayControl() {
                     </label>
                   </div>
                   {device.autoRotate && (
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 mb-4">
                       <div className="flex justify-between font-mono text-[10px] text-white/50">
                         <span>Interval: {device.rotateInterval || 60}m</span>
                       </div>
@@ -123,6 +123,49 @@ export default function DisplayControl() {
                       />
                     </div>
                   )}
+                  
+                  {/* SLEEP SCHEDULE SETTINGS */}
+                  <div className="pt-4 border-t border-white/10 mt-2">
+                    <h4 className="font-mono text-[10px] uppercase tracking-widest text-white/50 mb-3">Power Schedule</h4>
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <label className="block font-mono text-[8px] text-white/40 uppercase mb-1">Wake Time</label>
+                        <input 
+                          type="time" 
+                          className="w-full bg-black border border-white/20 rounded px-2 py-1 text-xs font-mono text-white outline-none focus:border-red-600"
+                          defaultValue={device.wakeTime || "07:00"}
+                          onBlur={(e) => {
+                            const newWake = e.target.value;
+                            setDevices(prev => prev.map(d => d.id === device.id ? { ...d, wakeTime: newWake } : d));
+                            fetch('/api/display/settings', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+                              body: JSON.stringify({ deviceId: device.id, wakeTime: newWake, sleepTime: device.sleepTime || "22:00" })
+                            });
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block font-mono text-[8px] text-white/40 uppercase mb-1">Sleep Time</label>
+                        <input 
+                          type="time" 
+                          className="w-full bg-black border border-white/20 rounded px-2 py-1 text-xs font-mono text-white outline-none focus:border-red-600"
+                          defaultValue={device.sleepTime || "22:00"}
+                          onBlur={(e) => {
+                            const newSleep = e.target.value;
+                            setDevices(prev => prev.map(d => d.id === device.id ? { ...d, sleepTime: newSleep } : d));
+                            fetch('/api/display/settings', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+                              body: JSON.stringify({ deviceId: device.id, wakeTime: device.wakeTime || "07:00", sleepTime: newSleep })
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {/* END SLEEP SCHEDULE SETTINGS */}
+
                 </div>
               ))}
             </div>

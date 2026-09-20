@@ -75,12 +75,38 @@ async function advanceHardwareQueue(device) {
       
       if (!device) return res.status(404).json({ error: "Device not found." });
       
-      // Get server hour for Smart Dimming
-      const serverHour = new Date().getHours();
+      const now = new Date();
+      const serverHour = now.getHours();
+      
+      // Calculate Deep Sleep Schedule
+      let sleepForSeconds = 0;
+      if (device.wakeTime && device.sleepTime) {
+        const currentMin = now.getMinutes();
+        const [wakeH, wakeM] = device.wakeTime.split(':').map(Number);
+        const [sleepH, sleepM] = device.sleepTime.split(':').map(Number);
+        
+        const currentMinutes = serverHour * 60 + currentMin;
+        const wakeMinutes = wakeH * 60 + wakeM;
+        const sleepMinutes = sleepH * 60 + sleepM;
+        
+        let isSleeping = false;
+        if (sleepMinutes < wakeMinutes) {
+          // Crosses midnight (e.g. 22:00 to 07:00)
+          if (currentMinutes >= sleepMinutes || currentMinutes < wakeMinutes) isSleeping = true;
+        } else {
+          // Same day (e.g. 10:00 to 14:00)
+          if (currentMinutes >= sleepMinutes && currentMinutes < wakeMinutes) isSleeping = true;
+        }
+        
+        if (isSleeping) {
+          let minsUntilWake = wakeMinutes - currentMinutes;
+          if (minsUntilWake <= 0) minsUntilWake += 24 * 60;
+          sleepForSeconds = (minsUntilWake * 60) - now.getSeconds();
+        }
+      }
       
       let queue = [];
       
-      // Fetch up to 10 bookmarks for offline caching
       if (device.ownerId) {
          const bookmarks = await prisma.bookmark.findMany({
            where: { userId: device.ownerId },
@@ -91,17 +117,12 @@ async function advanceHardwareQueue(device) {
          queue = bookmarks.map(b => b.verse);
       }
       
-      // Fallback
-      if (queue.length === 0 && device.activeVerse) {
-        queue = [device.activeVerse];
-      }
-      
-      if (queue.length === 0) {
-        queue = [{ reference: "QUEUE EMPTY", text: "Please bookmark verses in the Web App." }];
-      }
+      if (queue.length === 0 && device.activeVerse) queue = [device.activeVerse];
+      if (queue.length === 0) queue = [{ reference: "QUEUE EMPTY", text: "Please bookmark verses in the Web App." }];
       
       res.json({
         serverHour,
+        sleepForSeconds,
         verses: queue
       });
       
@@ -110,6 +131,22 @@ async function advanceHardwareQueue(device) {
       res.status(500).json({ error: "Server error" });
     }
   });
+
+router.put("/settings", authenticate, async (req, res) => {
+  const { deviceId, wakeTime, sleepTime } = req.body;
+  try {
+    const device = await prisma.device.findFirst({ where: { id: deviceId, ownerId: req.userId } });
+    if (!device) return res.status(403).json({ error: "Forbidden" });
+    
+    await prisma.device.update({
+      where: { id: deviceId },
+      data: { wakeTime, sleepTime }
+    });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 router.post("/active", authenticate, async (req, res) => {
   const { deviceId, verseId } = req.body;

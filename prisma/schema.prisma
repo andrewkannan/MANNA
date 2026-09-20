@@ -40,6 +40,9 @@ model Device {
   autoRotate     Boolean  @default(false)
   rotateInterval Int      @default(60) // In minutes
   lastRotatedAt  DateTime @default(now())
+  wakeTime       String   @default("07:00")
+  sleepTime      String   @default("22:00")
+  timezone       String   @default("America/New_York")
 
   owner          User?    @relation(fields: [ownerId], references: [id])
   createdAt      DateTime @default(now())
@@ -98,3 +101,4 @@ model ReviewLog {
 
   @@unique([userId, date])
 }
+

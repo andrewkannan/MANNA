@@ -18,6 +18,7 @@ import { initializeDatabase } from './db/seedDatabase';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './store/useAuth';
 import { useData } from './store/useData';
+import { Toaster } from 'sonner';
 
 const ProtectedRoute = () => {
   const token = useAuth(state => state.token);
@@ -49,6 +50,7 @@ function App() {
 
   return (
     <>
+      <Toaster position="top-center" theme="dark" toastOptions={{ style: { background: '#111', border: '1px solid #333', color: '#fff', borderRadius: '999px', fontFamily: 'Space Grotesk' } }} />
       <div className="scanlines" />
       <BrowserRouter>
         <Routes>

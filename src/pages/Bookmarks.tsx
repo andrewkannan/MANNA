@@ -6,6 +6,35 @@ import { redLetterVerses } from '../utils/redLetters';
 import { PageWrapper } from '../components/animations/PageWrapper';
 import { StaggerList } from '../components/animations/StaggerList';
 import { motion } from 'framer-motion';
+import EmptyState from '../components/EmptyState';
+
+import { toast } from 'sonner';
+
+import { Trash2 } from 'lucide-react';
+
+const SwipeableItem = ({ children, onDelete }: { children: React.ReactNode, onDelete: () => void }) => {
+  return (
+    <div className="relative w-full rounded-xl overflow-hidden bg-red-900 border border-red-900">
+      <div className="absolute right-0 inset-y-0 w-24 flex items-center justify-end px-5 text-white">
+        <Trash2 size={24} />
+      </div>
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: -80, right: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(e, info) => {
+          if (info.offset.x < -60) {
+            onDelete();
+            if (navigator.vibrate) navigator.vibrate(50);
+          }
+        }}
+        className="w-full bg-black h-full rounded-xl z-10 relative"
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+};
 
 export default function Bookmarks() {
   const [search, setSearch] = useState('');
@@ -13,7 +42,7 @@ export default function Bookmarks() {
   const [newRef, setNewRef] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { bookmarks, addBookmark } = useData();
+  const { bookmarks, addBookmark, deleteBookmark } = useData();
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   const allTags = Array.from(new Set(
@@ -45,19 +74,25 @@ export default function Bookmarks() {
         });
         setNewRef('');
         setShowAdd(false);
+        toast.success(`Added ${data.reference} to Bookmarks!`);
       } else {
-        alert("Verse not found. Check the reference (e.g. John 3:16)");
+        toast.error("Verse not found. Check the reference (e.g. John 3:16)");
       }
     } catch (err) {
-      alert("Error fetching verse.");
+      toast.error("Error fetching verse.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleDelete = async (id: string, ref: string) => {
+    await deleteBookmark(id);
+    toast.success(`Deleted ${ref}`);
+  };
+
   return (
-    <PageWrapper className="pb-24 bg-black text-white">
-      <header className="px-6 pt-12 pb-4 sticky top-0 bg-black/90 backdrop-blur-md z-10 border-b border-white/10">
+    <PageWrapper className="pb-24 bg-black text-white overflow-x-hidden">
+      <header className="px-6 pt-12 pb-4 sticky top-0 bg-black/90 backdrop-blur-md z-30 border-b border-white/10">
         <h1 className="text-4xl font-sans font-black tracking-tighter mb-6">BOOKMARKS</h1>
         
         <div className="relative">
@@ -119,20 +154,30 @@ export default function Bookmarks() {
           </motion.div>
         )}
 
-        <StaggerList className="space-y-4">
-          {verses?.map((bookmark) => {
-            const isRedLetter = redLetterVerses.has(bookmark.verse.reference);
-            return (
-              <div key={bookmark.id}>
-                <Link to={`/verse/${bookmark.id}`} className="block group">
-                  <div className="p-5 bg-transparent border border-white/20 rounded-xl group-hover:border-red-600 group-hover:bg-[#111] transition-all">
-                    <h3 className="font-mono text-[10px] font-bold text-red-500 tracking-[0.2em] uppercase mb-2">{bookmark.verse.reference}</h3>
-                    <p className={`font-sans text-sm leading-snug line-clamp-2 ${isRedLetter ? 'text-red-500 font-bold' : 'text-white/80'}`}>{bookmark.verse.text}</p>
-                  </div>
-                </Link>
-              </div>
-            );
-          })}
+        <StaggerList className="space-y-4 overflow-hidden">
+          {verses.length === 0 ? (
+            <EmptyState 
+              icon={Bookmark} 
+              title="NO SAVED VERSES" 
+              description="You haven't bookmarked any verses yet."
+              actionLabel="ADD VERSE"
+              onAction={() => setShowAdd(true)}
+            />
+          ) : (
+            verses.map((bookmark) => {
+              const isRedLetter = redLetterVerses.has(bookmark.verse.reference);
+              return (
+                <SwipeableItem key={bookmark.id} onDelete={() => handleDelete(bookmark.id, bookmark.verse.reference)}>
+                  <Link to={`/verse/${bookmark.id}`} className="block group">
+                    <div className="p-5 bg-[#050505] border border-white/20 rounded-xl group-hover:border-red-600 transition-all">
+                      <h3 className="font-mono text-[10px] font-bold text-red-500 tracking-[0.2em] uppercase mb-2">{bookmark.verse.reference}</h3>
+                      <p className={`font-sans text-sm leading-snug line-clamp-2 ${isRedLetter ? 'text-red-500 font-bold' : 'text-white/80'}`}>{bookmark.verse.text}</p>
+                    </div>
+                  </Link>
+                </SwipeableItem>
+              );
+            })
+          )}
         </StaggerList>
       </main>
 

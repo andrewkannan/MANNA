@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Monitor, Plus, X, Loader2 } from "lucide-react";
 import { useAuth } from "../store/useAuth";
+import EmptyState from "../components/EmptyState";
+import { toast } from 'sonner';
 
 export default function Devices() {
   const [devices, setDevices] = useState<{ id: string; name: string }[]>([]);
@@ -52,8 +54,10 @@ export default function Devices() {
       setPairingCode("");
       setDeviceName("");
       setShowPairing(false);
+      toast.success("Device paired successfully!");
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -66,8 +70,10 @@ export default function Devices() {
         headers: { Authorization: `Bearer ${token}` }
       });
       await fetchDevices();
+      toast.success("Device unlinked");
     } catch (err) {
       console.error(err);
+      toast.error("Failed to unlink device");
     }
   };
 
@@ -127,9 +133,13 @@ export default function Devices() {
         )}
 
         {devices.length === 0 && !showPairing ? (
-          <div className="text-center py-20 text-white/30 font-mono text-xs uppercase tracking-widest">
-            No hardware linked
-          </div>
+          <EmptyState 
+            icon={Monitor} 
+            title="NO HARDWARE" 
+            description="Link a LilyGO T-Display S3 to start syncing verses to your desk." 
+            actionLabel="LINK DEVICE" 
+            onAction={() => setShowPairing(true)} 
+          />
         ) : (
           <div className="space-y-3">
             {devices.map(device => (
